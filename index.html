@@ -236,21 +236,56 @@
   .ticker-bar {
     background: var(--navy);
     border-bottom: 3px solid var(--amber);
-    overflow: hidden;
-    white-space: nowrap;
     position: relative;
+    display: flex;
+    align-items: stretch;
+  }
+  .ticker-arrow {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    background: rgba(255,255,255,0.06);
+    border: none;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    color: #e8edf1;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .ticker-arrow:last-of-type {
+    border-right: none;
+    border-left: 1px solid rgba(255,255,255,0.15);
+  }
+  .ticker-arrow:hover {
+    background: rgba(255,255,255,0.16);
+    color: var(--amber);
+  }
+  .ticker-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+    background: transparent;
+    color: #e8edf1;
+  }
+  .ticker-rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
   .ticker-track {
     display: flex;
-    width: max-content;
-    animation: ticker-scroll 65s linear infinite;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    white-space: nowrap;
+    scrollbar-width: none;
   }
-  .ticker-bar:hover .ticker-track {
-    animation-play-state: paused;
+  .ticker-track::-webkit-scrollbar {
+    display: none;
   }
-  @keyframes ticker-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+  .ticker-track + .ticker-track {
+    border-top: 1px solid rgba(255,255,255,0.12);
   }
   .ticker-set {
     display: flex;
@@ -259,11 +294,11 @@
   .ticker-item {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
-    padding: 22px 32px;
+    gap: 10px;
+    padding: 13px 28px;
     text-decoration: none;
     color: #e8edf1;
-    font-size: 1.1rem;
+    font-size: 1.02rem;
     font-weight: 500;
     white-space: nowrap;
     border-right: 1px solid rgba(255,255,255,0.15);
@@ -272,15 +307,15 @@
     color: var(--amber);
   }
   .ticker-item img {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     border-radius: 6px;
     flex-shrink: 0;
   }
   .ticker-item .site-fallback {
     display: none;
     font-weight: 800;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--amber);
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -309,10 +344,16 @@
 </header>
 
 <div class="ticker-bar" id="tickerBar">
-  <div class="ticker-track" id="tickerTrack">
-    <div class="ticker-set" id="tickerSet1"><span class="ticker-loading">Loading headlines…</span></div>
-    <div class="ticker-set" id="tickerSet2" aria-hidden="true"></div>
+  <button class="ticker-arrow" id="tickerPrev" type="button" aria-label="Scroll headlines left">‹</button>
+  <div class="ticker-rows">
+    <div class="ticker-track" id="tickerTrackA">
+      <div class="ticker-set" id="tickerSetA"><span class="ticker-loading">Loading headlines…</span></div>
+    </div>
+    <div class="ticker-track" id="tickerTrackB">
+      <div class="ticker-set" id="tickerSetB"></div>
+    </div>
   </div>
+  <button class="ticker-arrow" id="tickerNext" type="button" aria-label="Scroll headlines right">›</button>
 </div>
 <svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
@@ -549,20 +590,42 @@
     return arr;
   }
 
+  // Split into two rows so different stories show on each — alternating
+  // items keeps the rows from just repeating the same source back to back.
   function renderItems(items) {
-    var set1 = document.getElementById("tickerSet1");
-    var set2 = document.getElementById("tickerSet2");
+    var setA = document.getElementById("tickerSetA");
+    var setB = document.getElementById("tickerSetB");
     if (!items || items.length === 0) {
-      set1.innerHTML = '<span class="ticker-loading">Headlines unavailable right now — browse the sources below.</span>';
-      document.getElementById("tickerTrack").style.animation = "none";
+      setA.innerHTML = '<span class="ticker-loading">Headlines unavailable right now — browse the sources below.</span>';
+      setB.innerHTML = "";
       return;
     }
-    document.getElementById("tickerTrack").style.animation = "";
-    set1.innerHTML = "";
-    set2.innerHTML = "";
-    items.forEach(function (it) { set1.appendChild(buildItemEl(it)); });
-    items.forEach(function (it) { set2.appendChild(buildItemEl(it)); });
+    var rowA = [], rowB = [];
+    items.forEach(function (it, i) { (i % 2 === 0 ? rowA : rowB).push(it); });
+    setA.innerHTML = "";
+    setB.innerHTML = "";
+    rowA.forEach(function (it) { setA.appendChild(buildItemEl(it)); });
+    rowB.forEach(function (it) { setB.appendChild(buildItemEl(it)); });
   }
+
+  // Manual scroll controls — arrow buttons move both rows together by
+  // roughly one "page" of visible items at a time.
+  (function setupArrows() {
+    var trackA = document.getElementById("tickerTrackA");
+    var trackB = document.getElementById("tickerTrackB");
+    var prev = document.getElementById("tickerPrev");
+    var next = document.getElementById("tickerNext");
+    prev.addEventListener("click", function () {
+      var d = -trackA.clientWidth * 0.8;
+      trackA.scrollBy({ left: d, behavior: "smooth" });
+      trackB.scrollBy({ left: d, behavior: "smooth" });
+    });
+    next.addEventListener("click", function () {
+      var d = trackA.clientWidth * 0.8;
+      trackA.scrollBy({ left: d, behavior: "smooth" });
+      trackB.scrollBy({ left: d, behavior: "smooth" });
+    });
+  })();
 
   function readCache() {
     try {
