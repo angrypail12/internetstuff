@@ -235,41 +235,42 @@
   /* ---- Headline ticker ---- */
   .ticker-bar {
     background: var(--navy);
-    border-bottom: 3px solid var(--amber);
     position: relative;
-    display: flex;
-    align-items: stretch;
   }
-  .ticker-arrow {
-    flex-shrink: 0;
+  .ticker-controls {
+    background: var(--navy);
+    border-bottom: 3px solid var(--amber);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    background: rgba(255,255,255,0.06);
-    border: none;
-    border-right: 1px solid rgba(255,255,255,0.15);
+    gap: 14px;
+    padding: 10px 0 14px;
+  }
+  .ticker-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
     color: #e8edf1;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
   }
-  .ticker-arrow:last-of-type {
-    border-right: none;
-    border-left: 1px solid rgba(255,255,255,0.15);
-  }
   .ticker-arrow:hover {
-    background: rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.22);
     color: var(--amber);
   }
   .ticker-arrow:disabled {
     opacity: 0.3;
     cursor: default;
-    background: transparent;
+    background: rgba(255,255,255,0.1);
     color: #e8edf1;
   }
   .ticker-rows {
-    flex: 1;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -344,7 +345,6 @@
 </header>
 
 <div class="ticker-bar" id="tickerBar">
-  <button class="ticker-arrow" id="tickerPrev" type="button" aria-label="Scroll headlines left">‹</button>
   <div class="ticker-rows">
     <div class="ticker-track" id="tickerTrackA">
       <div class="ticker-set" id="tickerSetA"><span class="ticker-loading">Loading headlines…</span></div>
@@ -353,7 +353,10 @@
       <div class="ticker-set" id="tickerSetB"></div>
     </div>
   </div>
-  <button class="ticker-arrow" id="tickerNext" type="button" aria-label="Scroll headlines right">›</button>
+  <div class="ticker-controls">
+    <button class="ticker-arrow" id="tickerPrev" type="button" aria-label="Scroll headlines left">‹</button>
+    <button class="ticker-arrow" id="tickerNext" type="button" aria-label="Scroll headlines right">›</button>
+  </div>
 </div>
 <svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
