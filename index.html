@@ -512,6 +512,14 @@
     });
   }
 
+  // Reject titles containing non-Latin scripts (Cyrillic, CJK, Arabic,
+  // Hebrew, Hangul, Thai, Devanagari, Greek, etc.) as a simple English-only
+  // filter — good enough since these sources are all normally English.
+  var NON_LATIN_RE = /[Ѐ-ӿ԰-֏֐-׿؀-ۿ܀-ݏऀ-ॿ฀-๿Ⴀ-ჿᄀ-ᇿ぀-ヿ㐀-䶿一-鿿가-힣Ͱ-Ͽ]/;
+  function isEnglishTitle(title) {
+    return !NON_LATIN_RE.test(title);
+  }
+
   function parseFeed(text, source) {
     var doc = new DOMParser().parseFromString(text, "text/xml");
     if (doc.querySelector("parsererror")) return [];
@@ -533,7 +541,7 @@
         link = linkNode ? linkNode.textContent.trim() : "";
       }
       return { title: title, link: link, name: source.name, domain: source.domain };
-    }).filter(function (it) { return it.title && it.link; });
+    }).filter(function (it) { return it.title && it.link && isEnglishTitle(it.title); });
   }
 
   // Try each proxy in sequence for a single feed; first one that yields
