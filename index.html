@@ -30,7 +30,9 @@
   header {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--navy) 0%, #2c4257 55%, #1f8a70 120%);
+    background:
+      linear-gradient(to bottom, transparent 78%, var(--navy) 100%),
+      linear-gradient(135deg, var(--navy) 0%, #2c4257 55%, #1f8a70 120%);
     color: white;
     padding: 0;
   }
@@ -233,7 +235,6 @@
   /* ---- Headline ticker ---- */
   .ticker-bar {
     background: var(--navy);
-    border-top: 3px solid var(--amber);
     border-bottom: 3px solid var(--amber);
     overflow: hidden;
     white-space: nowrap;
@@ -305,9 +306,6 @@
   <div class="emoji-strip">
     <span>📰</span><span>🏈</span><span>🏙️</span><span>🎬</span><span>💬</span>
   </div>
-  <svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
-  </svg>
 </header>
 
 <div class="ticker-bar" id="tickerBar">
@@ -316,6 +314,9 @@
     <div class="ticker-set" id="tickerSet2" aria-hidden="true"></div>
   </div>
 </div>
+<svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
+</svg>
 
 <main>
 
@@ -450,7 +451,7 @@
   ];
   var ITEMS_PER_FEED = 3;
   var PROXY = "https://api.allorigins.win/raw?url=";
-  var FETCH_TIMEOUT_MS = 4500;
+  var FETCH_TIMEOUT_MS = 15000;
   var CACHE_KEY = "tickerHeadlinesCache_v1";
   var CACHE_MAX_AGE_MS = 3 * 60 * 60 * 1000; // 3 hours
 
@@ -562,19 +563,34 @@
 
   // Show cached headlines instantly if we have them
   var cached = readCache();
+  var haveShownSomething = false;
   if (cached) {
     renderItems(cached);
+    haveShownSomething = true;
   }
 
-  // Always refresh in the background so the cache stays current
-  Promise.all(FEEDS.map(loadFeed)).then(function (results) {
-    var items = shuffle([].concat.apply([], results));
-    if (items.length > 0) {
-      writeCache(items);
-      renderItems(items);
-    } else if (!cached) {
-      renderItems([]);
-    }
+  // Fetch live feeds in the background. Render as soon as the FIRST one
+  // comes back (instead of waiting on all 13 — some sources are slow),
+  // then keep folding in more as they arrive.
+  var liveItems = [];
+  var pending = FEEDS.length;
+
+  FEEDS.forEach(function (source) {
+    loadFeed(source).then(function (items) {
+      pending--;
+      if (items.length > 0) {
+        liveItems = liveItems.concat(items);
+        renderItems(shuffle(liveItems.slice()));
+        haveShownSomething = true;
+      }
+      if (pending === 0) {
+        if (liveItems.length > 0) {
+          writeCache(liveItems);
+        } else if (!haveShownSomething) {
+          renderItems([]);
+        }
+      }
+    });
   });
 })();
 </script>
