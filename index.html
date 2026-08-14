@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intentional Internet</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AD%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --navy: #1c2b3a;
+    --teal: #1f8a70;
+    --teal-light: #e6f4f1;
+    --amber: #e0a52c;
+    --ink: #22303e;
+    --muted: #64748b;
+    --card-bg: #ffffff;
+    --bg: #f4f6f8;
+    --border: #e3e8ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* ---- Topbar ---- */
+  header {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--navy) 0%, #2c4257 55%, #1f8a70 120%);
+    color: white;
+    padding: 0;
+  }
+  header::before, header::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  header::before {
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(circle, var(--amber), transparent 70%);
+    top: -140px;
+    right: -60px;
+  }
+  header::after {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #35c4a1, transparent 70%);
+    bottom: -160px;
+    left: -40px;
+  }
+  .topbar-inner {
+    position: relative;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 32px 40px;
+    text-align: center;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #ffe8b8;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 7px 16px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 92px;
+    height: 92px;
+    border-radius: 26px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    font-size: 46px;
+    margin-bottom: 20px;
+    transform: rotate(-4deg);
+  }
+  header h1 {
+    margin: 0 0 12px;
+    font-size: 3rem;
+    letter-spacing: -0.02em;
+  }
+  header h1 .accent {
+    color: var(--amber);
+  }
+  header p {
+    margin: 0 auto;
+    color: #cfdae3;
+    font-size: 1.25rem;
+    max-width: 680px;
+  }
+  .emoji-strip {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 0 26px;
+  }
+  .emoji-strip span {
+    display: inline-block;
+    font-size: 2rem;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+  }
+  .emoji-strip span:nth-child(1) { transform: rotate(-9deg); }
+  .emoji-strip span:nth-child(2) { transform: rotate(6deg); }
+  .emoji-strip span:nth-child(3) { transform: rotate(-5deg); }
+  .emoji-strip span:nth-child(4) { transform: rotate(8deg); }
+  .emoji-strip span:nth-child(5) { transform: rotate(-7deg); }
+  .header-wave {
+    display: block;
+    width: 100%;
+    height: 44px;
+    margin-top: -2px;
+  }
+
+  main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 44px 32px 80px;
+  }
+
+  h2.section-title {
+    font-size: 1.55rem;
+    color: var(--navy);
+    margin: 0 0 22px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .grid {
+    column-count: 2;
+    column-gap: 22px;
+  }
+  @media (max-width: 780px) {
+    .grid { column-count: 1; }
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    break-inside: avoid;
+    margin-bottom: 22px;
+  }
+  .card h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+    color: var(--navy);
+    font-weight: 800;
+  }
+  .card .blurb {
+    margin: 0 0 18px;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  /* ---- Site tiles (fully clickable) ---- */
+  .tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #f7f9fb;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+  }
+  .tile:hover {
+    background: var(--teal-light);
+    border-color: #b7ddd2;
+    transform: translateX(2px);
+  }
+  .tile .icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    padding: 4px;
+    flex-shrink: 0;
+  }
+  .tile .info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tile .desc {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .tile .arrow {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1rem;
+    padding: 30px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topbar-inner">
+    <span class="eyebrow">🏡 The Warnimont Household</span>
+    <div class="logo-mark">🧭</div>
+    <h1><span class="accent">Intentional</span> Internet</h1>
+    <p>Forums and sites worth reading instead of scrolling.</p>
+  </div>
+  <div class="emoji-strip">
+    <span>📰</span><span>🏈</span><span>🏙️</span><span>🎬</span><span>💬</span>
+  </div>
+  <svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
+  </svg>
+</header>
+
+<main>
+
+  <h2 class="section-title">By category</h2>
+  <div class="grid">
+
+    <div class="card">
+      <h3>🏈 Hoosiers &amp; college football</h3>
+      <p class="blurb">IU sports and college football, straight from the people who live it.</p>
+      <div class="tiles">
+        <a class="tile" href="https://hoosierhuddle.com/community-2/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=hoosierhuddle.com&sz=64" alt="">
+          <span class="info">Hoosier Huddle<span class="desc">IU football &amp; basketball forum</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.thedailyhoosier.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=thedailyhoosier.com&sz=64" alt="">
+          <span class="info">The Daily Hoosier<span class="desc">IU sports news &amp; commentary</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.insidethehall.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=insidethehall.com&sz=64" alt="">
+          <span class="info">Inside the Hall<span class="desc">IU basketball news &amp; recruiting</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://247sports.com/college/indiana/board/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=247sports.com&sz=64" alt="">
+          <span class="info">247Sports Indiana Boards<span class="desc">Recruiting &amp; fan discussion</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://sportshoop.la/forums/college-football-forum.91/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=sportshoop.la&sz=64" alt="">
+          <span class="info">Sports Hoop<span class="desc">General college football forum</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🏙️ Chicago &amp; local</h3>
+      <p class="blurb">What's actually happening in the neighborhood and the city.</p>
+      <div class="tiles">
+        <a class="tile" href="https://www.city-data.com/forum/chicago/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=city-data.com&sz=64" alt="">
+          <span class="info">City-Data Chicago Forum<span class="desc">Neighborhood talk, local Q&amp;A</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://chicago.suntimes.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=suntimes.com&sz=64" alt="">
+          <span class="info">Chicago Sun-Times<span class="desc">Local news</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://blockclubchicago.org/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=blockclubchicago.org&sz=64" alt="">
+          <span class="info">Block Club Chicago<span class="desc">Nonprofit neighborhood-level news</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.wbez.org/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=wbez.org&sz=64" alt="">
+          <span class="info">WBEZ<span class="desc">Chicago public radio &amp; long-form news</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎬 Arts, film, TV &amp; theater</h3>
+      <p class="blurb">Movies, TV, and stage — writing and communities worth following.</p>
+      <div class="tiles">
+        <a class="tile" href="https://letterboxd.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=letterboxd.com&sz=64" alt="">
+          <span class="info">Letterboxd<span class="desc">Track &amp; discuss films, follow other watchers</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.avclub.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=avclub.com&sz=64" alt="">
+          <span class="info">The A.V. Club<span class="desc">TV, film &amp; pop culture writing</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.vulture.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=vulture.com&sz=64" alt="">
+          <span class="info">Vulture<span class="desc">Culture &amp; entertainment journalism</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.broadwayworld.com/chicago/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=broadwayworld.com&sz=64" alt="">
+          <span class="info">BroadwayWorld Chicago<span class="desc">Theater news, listings &amp; forum</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>💬 General interest forums</h3>
+      <p class="blurb">Old-school discussion boards, still better than any feed.</p>
+      <div class="tiles">
+        <a class="tile" href="https://news.ycombinator.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=news.ycombinator.com&sz=64" alt="">
+          <span class="info">Hacker News<span class="desc">Tech, business &amp; ideas, high-signal comments</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="tile" href="https://www.metafilter.com/" target="_blank">
+          <img class="icon" src="https://www.google.com/s2/favicons?domain=metafilter.com&sz=64" alt="">
+          <span class="info">MetaFilter<span class="desc">Community-run link blog &amp; discussion</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  Bookmark this page.
+</footer>
+
+</body>
+</html>
