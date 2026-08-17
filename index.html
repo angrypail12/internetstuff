@@ -33,6 +33,24 @@
     background: var(--paper-white);
     border-bottom: 1px solid var(--rule);
   }
+  .nameplate {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 22px 32px 14px;
+    text-align: center;
+    border-top: 1px solid var(--rule);
+    border-bottom: 5px solid var(--rule);
+  }
+  header h1 {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: clamp(2.8rem, 8vw, 5.6rem);
+    line-height: 1;
+    color: var(--ink);
+  }
   .masthead-top {
     max-width: 1320px;
     margin: 0 auto;
@@ -45,51 +63,21 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--muted);
-    border-bottom: 1px solid var(--border);
   }
   .topbar-inner {
     max-width: 1320px;
     margin: 0 auto;
-    padding: 30px 32px 20px;
+    padding: 14px 32px 4px;
     text-align: center;
-  }
-  header h1 {
-    margin: 0 0 10px;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 900;
-    font-size: 3.6rem;
-    letter-spacing: -0.01em;
-    color: var(--ink);
-  }
-  header h1 .accent {
-    color: var(--red);
-    font-style: italic;
+    border-bottom: 1px solid var(--border);
   }
   header .tagline {
     margin: 0 auto;
-    font-style: italic;
-    color: var(--muted);
-    font-size: 1.15rem;
-    max-width: 620px;
-  }
-  .masthead-bottom {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 14px 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--ink);
-    border-top: 3px double var(--rule);
-  }
-  .masthead-bottom .dot {
     color: var(--red);
+    font-size: 0.85rem;
   }
 
   main {
@@ -348,10 +336,13 @@
 <body>
 
 <header>
-  <div class="masthead-top">Est. 2026 <span class="dot">·</span> Chicago, Illinois</div>
-  <div class="masthead-bottom">
-    <span>Vol. I — No. 1</span><span class="dot">•</span><span>Forums &amp; Longform</span><span class="dot">•</span><span>No Algorithm Required</span>
+  <div class="nameplate">
+    <h1>Forums &amp; Longform</h1>
   </div>
+  <div class="topbar-inner">
+    <p class="tagline">No Algorithm Required</p>
+  </div>
+  <div class="masthead-top">Est. 2026 <span class="dot">·</span> Chicago, Illinois</div>
 </header>
 
 <div class="ticker-bar" id="tickerBar">
