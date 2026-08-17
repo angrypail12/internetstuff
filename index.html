@@ -292,6 +292,11 @@
     border: 1px solid var(--border);
     background: var(--paper-white);
   }
+  .ticker-item .site-emoji {
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    line-height: 1;
+  }
   .ticker-item .site-fallback {
     display: none;
     font-style: normal;
@@ -470,7 +475,7 @@
     { name: "Vulture", domain: "vulture.com", feed: "https://www.vulture.com/rss.xml" },
     { name: "Hoosier Huddle (MBB)", domain: "hoosierhuddle.com", feed: "https://hoosierhuddle.com/community/free-iu-mens-basketball-board/?type=rss2&forum=10&topic=0" },
     { name: "Hoosier Huddle (FB)", domain: "hoosierhuddle.com", feed: "https://hoosierhuddle.com/community/free-iu-football-board/?type=rss2&forum=9&topic=0" },
-    { name: "Sports Hoop", domain: "sportshoop.la", feed: "https://sportshoop.la/forums/college-football-forum.91/index.rss" }
+    { name: "Sports Hoop", domain: "sportshoop.la", feed: "https://sportshoop.la/forums/college-football-forum.91/index.rss", icon: "🏈" }
   ];
   var ITEMS_PER_FEED = 10;
   // Try multiple CORS proxies in order — free proxies are individually
@@ -553,7 +558,7 @@
         link = linkNode ? linkNode.textContent.trim() : "";
       }
       var date = extractDate(node, isAtom);
-      return { title: title, link: link, name: source.name, domain: source.domain, date: date };
+      return { title: title, link: link, name: source.name, domain: source.domain, date: date, icon: source.icon };
     }).filter(function (it) {
       return it.title && it.link && isEnglishTitle(it.title) && isRecent(it.date);
     }).sort(function (a, b) { return b.date - a.date; }).slice(0, ITEMS_PER_FEED);
@@ -585,16 +590,31 @@
     a.target = "_blank";
     a.rel = "noopener";
 
+    var title = document.createElement("span");
+    title.textContent = it.title;
+
+    // A few sources (forums, mostly) don't have a favicon any icon
+    // service reliably serves — for those we skip images entirely and
+    // just show a fixed emoji, which always renders no matter what.
+    if (it.icon) {
+      var emoji = document.createElement("span");
+      emoji.className = "site-emoji";
+      emoji.textContent = it.icon;
+      a.appendChild(emoji);
+      a.appendChild(title);
+      return a;
+    }
+
     var img = document.createElement("img");
     img.alt = "";
     var fallback = document.createElement("span");
     fallback.className = "site-fallback";
     fallback.textContent = it.name;
 
-    // Some smaller sites (forums especially) don't have a favicon Google
-    // has crawled, which shows up as a broken-image icon. Chain through a
-    // couple of icon services, then a direct favicon.ico guess, before
-    // giving up and showing the site name as text instead.
+    // Some smaller sites don't have a favicon Google has crawled, which
+    // shows up as a broken-image icon. Chain through a couple of icon
+    // services, then a direct favicon.ico guess, before giving up and
+    // showing the site name as text instead.
     var iconSources = [
       "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=64",
       "https://icons.duckduckgo.com/ip3/" + it.domain + ".ico",
@@ -611,9 +631,6 @@
       }
     };
     img.src = iconSources[0];
-
-    var title = document.createElement("span");
-    title.textContent = it.title;
 
     a.appendChild(img);
     a.appendChild(fallback);
