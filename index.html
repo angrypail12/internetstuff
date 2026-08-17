@@ -267,30 +267,25 @@
   }
   .ticker-set {
     display: flex;
-    align-items: stretch;
+    align-items: flex-start;
   }
   .ticker-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    position: relative;
+    display: block;
     box-sizing: border-box;
-    width: 320px;
-    height: 132px;
-    padding: 14px 20px;
-    overflow: hidden;
+    width: 380px;
+    min-height: 132px;
+    padding: 14px 20px 14px 136px;
     text-decoration: none;
     color: var(--ink);
     flex-shrink: 0;
     border-right: 1px solid var(--border);
   }
   .ticker-item .headline-text {
+    display: block;
     font-weight: 700;
     font-size: 1.08rem;
     line-height: 1.36;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
   .ticker-item:hover {
     color: var(--red);
@@ -300,12 +295,22 @@
   .ticker-item:hover .site-fallback {
     border-color: var(--red);
   }
-  .ticker-item img {
-    flex-shrink: 0;
-    width: 78px;
-    height: 78px;
+  /* Image/emoji/fallback fill the card from top inset to bottom inset —
+     absolute positioning so its own aspect ratio never drives the card's
+     height; the headline text is what decides how tall each card is. */
+  .ticker-item img,
+  .ticker-item .site-emoji,
+  .ticker-item .site-fallback {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    bottom: 14px;
+    width: 100px;
+    box-sizing: border-box;
     border: 1px solid var(--border);
     background: var(--paper-white);
+  }
+  .ticker-item img {
     object-fit: cover;
   }
   .ticker-item img.is-logo {
@@ -313,22 +318,13 @@
     padding: 8px;
   }
   .ticker-item .site-emoji {
-    flex-shrink: 0;
-    width: 78px;
-    height: 78px;
-    border: 1px solid var(--border);
-    background: var(--paper-white);
-    font-size: 2.5rem;
-    line-height: 76px;
-    text-align: center;
+    font-size: 2.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .ticker-item .site-fallback {
     display: none;
-    flex-shrink: 0;
-    width: 78px;
-    height: 78px;
-    border: 1px solid var(--border);
-    background: var(--paper-white);
     align-items: center;
     justify-content: center;
     text-align: center;
