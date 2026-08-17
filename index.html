@@ -201,9 +201,9 @@
 
   /* ---- Headline wire ---- */
   .ticker-bar {
-    background: #14120f;
+    background: #ece4d2;
     position: relative;
-    border-top: 3px double var(--red);
+    border-top: 3px double var(--rule);
   }
   .wire-label {
     text-align: center;
@@ -215,8 +215,8 @@
     color: var(--red);
   }
   .ticker-controls {
-    background: #14120f;
-    border-bottom: 3px double var(--red);
+    background: #ece4d2;
+    border-bottom: 3px double var(--rule);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -229,9 +229,9 @@
     justify-content: center;
     width: 38px;
     height: 30px;
-    background: transparent;
-    border: 1px solid rgba(242,237,224,0.35);
-    color: #f2ede0;
+    background: var(--paper-white);
+    border: 1px solid var(--rule);
+    color: var(--ink);
     font-size: 1.15rem;
     font-family: 'Playfair Display', Georgia, serif;
     cursor: pointer;
@@ -245,7 +245,7 @@
   .ticker-arrow:disabled {
     opacity: 0.3;
     cursor: default;
-    background: transparent;
+    background: var(--paper-white);
   }
   .ticker-rows {
     display: flex;
@@ -263,7 +263,7 @@
     display: none;
   }
   .ticker-track + .ticker-track {
-    border-top: 1px solid rgba(242,237,224,0.15);
+    border-top: 1px solid var(--border);
   }
   .ticker-set {
     display: flex;
@@ -275,28 +275,29 @@
     gap: 12px;
     padding: 16px 28px;
     text-decoration: none;
-    color: #fbf8f2;
+    color: var(--ink);
     font-weight: 700;
     font-size: 1.2rem;
     letter-spacing: 0.01em;
     white-space: nowrap;
-    border-right: 1px solid rgba(242,237,224,0.25);
+    border-right: 1px solid var(--border);
   }
   .ticker-item:hover {
-    color: #ffb4b4;
+    color: var(--red);
   }
   .ticker-item img {
     width: 24px;
     height: 24px;
     flex-shrink: 0;
-    border: 1px solid rgba(242,237,224,0.4);
+    border: 1px solid var(--border);
+    background: var(--paper-white);
   }
   .ticker-item .site-fallback {
     display: none;
     font-style: normal;
     font-weight: 800;
     font-size: 0.85rem;
-    color: #ffb4b4;
+    color: var(--red);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     flex-shrink: 0;
@@ -304,7 +305,7 @@
   .ticker-loading {
     display: inline-block;
     padding: 22px 30px;
-    color: #cfc9bb;
+    color: var(--muted);
     font-style: normal;
     font-size: 1.1rem;
   }
@@ -482,8 +483,9 @@
     function (u) { return "https://thingproxy.freeboard.io/fetch/" + u; }
   ];
   var FETCH_TIMEOUT_MS = 9000;
-  var CACHE_KEY = "tickerHeadlinesCache_v1";
-  var CACHE_MAX_AGE_MS = 3 * 60 * 60 * 1000; // 3 hours
+  var CACHE_KEY = "tickerHeadlinesCache_v2";
+  var CACHE_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour — keep the wire feeling current
+  var MAX_ITEM_AGE_MS = 3 * 24 * 60 * 60 * 1000; // drop anything older than 3 days
 
   function fetchWithTimeout(url, ms) {
     var controller = new AbortController();
@@ -501,6 +503,33 @@
     return !NON_LATIN_RE.test(title);
   }
 
+  // Pull a publish/update timestamp out of an RSS <item> or Atom <entry>.
+  // Returns NaN if nothing parseable is found.
+  function extractDate(node, isAtom) {
+    var text = null;
+    if (isAtom) {
+      var pub = node.querySelector("published") || node.querySelector("updated");
+      text = pub ? pub.textContent.trim() : null;
+    } else {
+      var pd = node.querySelector("pubDate");
+      if (!pd) {
+        var dcDates = node.getElementsByTagNameNS("*", "date");
+        if (dcDates && dcDates.length) pd = dcDates[0];
+      }
+      text = pd ? pd.textContent.trim() : null;
+    }
+    if (!text) return NaN;
+    var ts = Date.parse(text);
+    return isNaN(ts) ? NaN : ts;
+  }
+
+  function isRecent(ts) {
+    if (typeof ts !== "number" || isNaN(ts)) return false;
+    var age = Date.now() - ts;
+    // allow a little slack for clock skew on freshly-posted items
+    return age <= MAX_ITEM_AGE_MS && age >= -60 * 60 * 1000;
+  }
+
   function parseFeed(text, source) {
     var doc = new DOMParser().parseFromString(text, "text/xml");
     if (doc.querySelector("parsererror")) return [];
@@ -510,7 +539,9 @@
       nodes = Array.prototype.slice.call(doc.querySelectorAll("entry"));
       isAtom = true;
     }
-    return nodes.slice(0, ITEMS_PER_FEED).map(function (node) {
+    // Look a bit further than ITEMS_PER_FEED into the feed before trimming,
+    // since some of the newest entries may fall out once we filter by age.
+    return nodes.slice(0, Math.max(ITEMS_PER_FEED * 3, 30)).map(function (node) {
       var titleEl = node.querySelector("title");
       var title = titleEl ? titleEl.textContent.trim() : "";
       var link = "";
@@ -521,8 +552,11 @@
         var linkNode = node.querySelector("link");
         link = linkNode ? linkNode.textContent.trim() : "";
       }
-      return { title: title, link: link, name: source.name, domain: source.domain };
-    }).filter(function (it) { return it.title && it.link && isEnglishTitle(it.title); });
+      var date = extractDate(node, isAtom);
+      return { title: title, link: link, name: source.name, domain: source.domain, date: date };
+    }).filter(function (it) {
+      return it.title && it.link && isEnglishTitle(it.title) && isRecent(it.date);
+    }).sort(function (a, b) { return b.date - a.date; }).slice(0, ITEMS_PER_FEED);
   }
 
   // Try each proxy in sequence for a single feed; first one that yields
@@ -569,14 +603,6 @@
     a.appendChild(fallback);
     a.appendChild(title);
     return a;
-  }
-
-  function shuffle(arr) {
-    for (var i = arr.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
-    }
-    return arr;
   }
 
   // Split into two rows so different stories show on each — alternating
@@ -635,12 +661,17 @@
     } catch (e) {}
   }
 
-  // Show cached headlines instantly if we have them
+  // Show cached headlines instantly if we have them — but re-check age in
+  // case the cache is from just under an hour ago and something in it has
+  // now aged past the 3-day cutoff.
   var cached = readCache();
   var haveShownSomething = false;
   if (cached) {
-    renderItems(cached);
-    haveShownSomething = true;
+    var freshCached = cached.filter(function (it) { return isRecent(it.date); });
+    if (freshCached.length > 0) {
+      renderItems(freshCached.sort(function (a, b) { return b.date - a.date; }));
+      haveShownSomething = true;
+    }
   }
 
   // Fetch live feeds in the background. Render as soon as the FIRST one
@@ -654,7 +685,7 @@
       pending--;
       if (items.length > 0) {
         liveItems = liveItems.concat(items);
-        renderItems(shuffle(liveItems.slice()));
+        renderItems(liveItems.slice().sort(function (a, b) { return b.date - a.date; }));
         haveShownSomething = true;
       }
       if (pending === 0) {
