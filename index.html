@@ -4,133 +4,91 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Intentional Internet</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AD%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%B0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #1c2b3a;
-    --teal: #1f8a70;
-    --teal-light: #e6f4f1;
-    --amber: #e0a52c;
-    --ink: #22303e;
-    --muted: #64748b;
-    --card-bg: #ffffff;
-    --bg: #f4f6f8;
-    --border: #e3e8ee;
+    --ink: #1a1712;
+    --paper: #f2ede0;
+    --paper-white: #faf7ef;
+    --red: #8f1d1d;
+    --muted: #5c574c;
+    --border: #c9c0ab;
+    --rule: #1a1712;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
+    font-family: 'PT Serif', Georgia, 'Times New Roman', serif;
+    background: var(--paper);
     color: var(--ink);
     line-height: 1.5;
   }
 
-  /* ---- Topbar ---- */
+  /* ---- Masthead ---- */
   header {
-    position: relative;
-    overflow: hidden;
-    background:
-      linear-gradient(to bottom, transparent 78%, var(--navy) 100%),
-      linear-gradient(135deg, var(--navy) 0%, #2c4257 55%, #1f8a70 120%);
-    color: white;
-    padding: 0;
+    background: var(--paper-white);
+    border-bottom: 1px solid var(--rule);
   }
-  header::before, header::after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(50px);
-    opacity: 0.55;
-    pointer-events: none;
-  }
-  header::before {
-    width: 340px;
-    height: 340px;
-    background: radial-gradient(circle, var(--amber), transparent 70%);
-    top: -140px;
-    right: -60px;
-  }
-  header::after {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, #35c4a1, transparent 70%);
-    bottom: -160px;
-    left: -40px;
-  }
-  .topbar-inner {
-    position: relative;
+  .masthead-top {
     max-width: 1320px;
     margin: 0 auto;
-    padding: 56px 32px 40px;
+    padding: 10px 32px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 30px 32px 20px;
     text-align: center;
   }
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: #ffe8b8;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 7px 16px;
-    border-radius: 999px;
-    margin-bottom: 20px;
-  }
-  .logo-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 92px;
-    height: 92px;
-    border-radius: 26px;
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.3);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    font-size: 46px;
-    margin-bottom: 20px;
-    transform: rotate(-4deg);
-  }
   header h1 {
-    margin: 0 0 12px;
-    font-size: 3rem;
-    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    font-size: 3.6rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
   }
   header h1 .accent {
-    color: var(--amber);
+    color: var(--red);
+    font-style: italic;
   }
-  header p {
+  header .tagline {
     margin: 0 auto;
-    color: #cfdae3;
-    font-size: 1.25rem;
-    max-width: 680px;
+    font-style: italic;
+    color: var(--muted);
+    font-size: 1.15rem;
+    max-width: 620px;
   }
-  .emoji-strip {
-    position: relative;
+  .masthead-bottom {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 14px 32px;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    padding: 22px 0 26px;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border-top: 3px double var(--rule);
   }
-  .emoji-strip span {
-    display: inline-block;
-    font-size: 2rem;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
-  }
-  .emoji-strip span:nth-child(1) { transform: rotate(-9deg); }
-  .emoji-strip span:nth-child(2) { transform: rotate(6deg); }
-  .emoji-strip span:nth-child(3) { transform: rotate(-5deg); }
-  .emoji-strip span:nth-child(4) { transform: rotate(8deg); }
-  .emoji-strip span:nth-child(5) { transform: rotate(-7deg); }
-  .header-wave {
-    display: block;
-    width: 100%;
-    height: 44px;
-    margin-top: -2px;
+  .masthead-bottom .dot {
+    color: var(--red);
   }
 
   main {
@@ -140,135 +98,153 @@
   }
 
   h2.section-title {
-    font-size: 1.55rem;
-    color: var(--navy);
-    margin: 0 0 22px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--border);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 1.7rem;
+    color: var(--ink);
+    text-align: center;
+    margin: 0 0 34px;
+    padding-bottom: 16px;
+    border-bottom: 3px double var(--rule);
   }
 
   .grid {
     column-count: 2;
-    column-gap: 22px;
+    column-gap: 44px;
+    column-rule: 1px solid var(--border);
   }
   @media (max-width: 780px) {
     .grid { column-count: 1; }
   }
   .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 28px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     break-inside: avoid;
-    margin-bottom: 22px;
+    margin-bottom: 34px;
+    padding-top: 16px;
+    border-top: 3px double var(--rule);
   }
   .card h3 {
     margin: 0 0 6px;
-    font-size: 1.15rem;
-    color: var(--navy);
-    font-weight: 800;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--ink);
   }
   .card .blurb {
-    margin: 0 0 18px;
+    margin: 0 0 14px;
     font-size: 0.95rem;
+    font-style: italic;
     color: var(--muted);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
   }
 
-  /* ---- Site tiles (fully clickable) ---- */
+  /* ---- Site index (fully clickable rows) ---- */
   .tiles {
     display: flex;
     flex-direction: column;
-    gap: 12px;
   }
   .tile {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 16px 18px;
-    border-radius: 14px;
-    background: #f7f9fb;
-    border: 1px solid var(--border);
+    gap: 12px;
+    padding: 11px 2px;
+    border-bottom: 1px dashed var(--border);
     text-decoration: none;
     color: var(--ink);
-    font-weight: 600;
-    font-size: 1.1rem;
-    transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+    font-weight: 700;
+    font-size: 1.05rem;
+    transition: color 0.12s ease;
+  }
+  .tile:last-child {
+    border-bottom: none;
   }
   .tile:hover {
-    background: var(--teal-light);
-    border-color: #b7ddd2;
-    transform: translateX(2px);
+    color: var(--red);
   }
   .tile .icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: white;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    padding: 4px;
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
+    border: 1px solid var(--border);
+    background: var(--paper-white);
   }
   .tile .info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
   }
   .tile .desc {
-    font-weight: 500;
-    font-size: 0.85rem;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 0.82rem;
     color: var(--muted);
   }
   .tile .arrow {
     margin-left: auto;
-    color: var(--muted);
+    color: var(--red);
     font-size: 1.05rem;
   }
 
   footer {
     text-align: center;
     color: var(--muted);
-    font-size: 1rem;
-    padding: 30px;
+    font-style: italic;
+    font-size: 0.95rem;
+    padding: 26px;
+    border-top: 3px double var(--rule);
   }
 
-  /* ---- Headline ticker ---- */
+  /* ---- Headline wire ---- */
   .ticker-bar {
-    background: var(--navy);
+    background: #14120f;
     position: relative;
+    border-top: 3px double var(--red);
+  }
+  .wire-label {
+    text-align: center;
+    padding: 8px 0 2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
   }
   .ticker-controls {
-    background: var(--navy);
-    border-bottom: 3px solid var(--amber);
+    background: #14120f;
+    border-bottom: 3px double var(--red);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 14px;
-    padding: 10px 0 14px;
+    padding: 8px 0 12px;
   }
   .ticker-arrow {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 34px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: #e8edf1;
-    font-size: 1.2rem;
+    width: 38px;
+    height: 30px;
+    background: transparent;
+    border: 1px solid rgba(242,237,224,0.35);
+    color: #f2ede0;
+    font-size: 1.15rem;
+    font-family: 'Playfair Display', Georgia, serif;
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
   }
   .ticker-arrow:hover {
-    background: rgba(255,255,255,0.22);
-    color: var(--amber);
+    background: var(--red);
+    border-color: var(--red);
+    color: #f2ede0;
   }
   .ticker-arrow:disabled {
     opacity: 0.3;
     cursor: default;
-    background: rgba(255,255,255,0.1);
-    color: #e8edf1;
+    background: transparent;
   }
   .ticker-rows {
     display: flex;
@@ -286,7 +262,7 @@
     display: none;
   }
   .ticker-track + .ticker-track {
-    border-top: 1px solid rgba(255,255,255,0.12);
+    border-top: 1px solid rgba(242,237,224,0.15);
   }
   .ticker-set {
     display: flex;
@@ -296,58 +272,60 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 13px 28px;
+    padding: 12px 26px;
     text-decoration: none;
-    color: #e8edf1;
-    font-size: 1.02rem;
-    font-weight: 500;
+    color: #f2ede0;
+    font-style: italic;
+    font-size: 1rem;
     white-space: nowrap;
-    border-right: 1px solid rgba(255,255,255,0.15);
+    border-right: 1px solid rgba(242,237,224,0.2);
   }
   .ticker-item:hover {
-    color: var(--amber);
+    color: var(--red);
   }
   .ticker-item img {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
+    border: 1px solid rgba(242,237,224,0.35);
   }
   .ticker-item .site-fallback {
     display: none;
-    font-weight: 800;
-    font-size: 0.8rem;
-    color: var(--amber);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--red);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
     flex-shrink: 0;
   }
   .ticker-loading {
     display: inline-block;
-    padding: 22px 32px;
-    color: #9fb0bd;
-    font-size: 1rem;
+    padding: 20px 30px;
+    color: #9c968a;
+    font-style: italic;
+    font-size: 0.95rem;
   }
 </style>
 </head>
 <body>
 
 <header>
+  <div class="masthead-top">Est. 2026 <span class="dot">·</span> The Warnimont Household <span class="dot">·</span> Chicago, Illinois</div>
   <div class="topbar-inner">
-    <span class="eyebrow">🏡 The Warnimont Household</span>
-    <div class="logo-mark">🧭</div>
     <h1><span class="accent">Intentional</span> Internet</h1>
-    <p>Forums and sites worth reading instead of scrolling.</p>
+    <p class="tagline">Forums and sites worth reading instead of scrolling.</p>
   </div>
-  <div class="emoji-strip">
-    <span>📰</span><span>🏈</span><span>🏙️</span><span>🎬</span><span>💬</span>
+  <div class="masthead-bottom">
+    <span>Vol. I — No. 1</span><span class="dot">•</span><span>Forums &amp; Longform</span><span class="dot">•</span><span>No Algorithm Required</span>
   </div>
 </header>
 
 <div class="ticker-bar" id="tickerBar">
+  <div class="wire-label">— Latest Dispatches —</div>
   <div class="ticker-rows">
     <div class="ticker-track" id="tickerTrackA">
-      <div class="ticker-set" id="tickerSetA"><span class="ticker-loading">Loading headlines…</span></div>
+      <div class="ticker-set" id="tickerSetA"><span class="ticker-loading">Fetching today's dispatches…</span></div>
     </div>
     <div class="ticker-track" id="tickerTrackB">
       <div class="ticker-set" id="tickerSetB"></div>
@@ -358,17 +336,14 @@
     <button class="ticker-arrow" id="tickerNext" type="button" aria-label="Scroll headlines right">›</button>
   </div>
 </div>
-<svg class="header-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-  <path fill="#f4f6f8" d="M0,32 C240,60 480,0 720,16 C960,32 1200,58 1440,24 L1440,60 L0,60 Z"></path>
-</svg>
 
 <main>
 
-  <h2 class="section-title">By category</h2>
+  <h2 class="section-title">By Category</h2>
   <div class="grid">
 
     <div class="card">
-      <h3>🏈 Hoosiers &amp; college football</h3>
+      <h3>🏈 Hoosiers &amp; College Football</h3>
       <p class="blurb">IU sports and college football, straight from the people who live it.</p>
       <div class="tiles">
         <a class="tile" href="https://hoosierhuddle.com/community-2/" target="_blank">
@@ -400,7 +375,7 @@
     </div>
 
     <div class="card">
-      <h3>🏙️ Chicago &amp; local</h3>
+      <h3>🏙️ Chicago &amp; Local</h3>
       <p class="blurb">What's actually happening in the neighborhood and the city.</p>
       <div class="tiles">
         <a class="tile" href="https://www.city-data.com/forum/chicago/" target="_blank">
@@ -427,7 +402,7 @@
     </div>
 
     <div class="card">
-      <h3>🎬 Arts, film, TV &amp; theater</h3>
+      <h3>🎬 Arts, Film, TV &amp; Theater</h3>
       <p class="blurb">Movies, TV, and stage — writing and communities worth following.</p>
       <div class="tiles">
         <a class="tile" href="https://lithub.com/" target="_blank">
@@ -608,7 +583,7 @@
     var setA = document.getElementById("tickerSetA");
     var setB = document.getElementById("tickerSetB");
     if (!items || items.length === 0) {
-      setA.innerHTML = '<span class="ticker-loading">Headlines unavailable right now — browse the sources below.</span>';
+      setA.innerHTML = '<span class="ticker-loading">Wire’s down right now — browse the sources below.</span>';
       setB.innerHTML = "";
       return;
     }
@@ -667,7 +642,7 @@
   }
 
   // Fetch live feeds in the background. Render as soon as the FIRST one
-  // comes back (instead of waiting on all 13 — some sources are slow),
+  // comes back (instead of waiting on all 14 — some sources are slow),
   // then keep folding in more as they arrive.
   var liveItems = [];
   var pending = FEEDS.length;
