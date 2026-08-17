@@ -267,45 +267,74 @@
   }
   .ticker-set {
     display: flex;
-    align-items: center;
+    align-items: stretch;
   }
   .ticker-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 28px;
+    display: block;
+    box-sizing: border-box;
+    width: 300px;
+    height: 132px;
+    padding: 14px 20px;
+    overflow: hidden;
     text-decoration: none;
     color: var(--ink);
     font-weight: 700;
-    font-size: 1.2rem;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
+    font-size: 1.08rem;
+    line-height: 1.38;
+    white-space: normal;
+    flex-shrink: 0;
     border-right: 1px solid var(--border);
   }
   .ticker-item:hover {
     color: var(--red);
   }
+  .ticker-item:hover img,
+  .ticker-item:hover .site-emoji,
+  .ticker-item:hover .site-fallback {
+    border-color: var(--red);
+  }
   .ticker-item img {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
+    float: left;
+    width: 62px;
+    height: 62px;
+    margin: 0 14px 8px 0;
     border: 1px solid var(--border);
     background: var(--paper-white);
+    object-fit: cover;
+  }
+  .ticker-item img.is-logo {
+    object-fit: contain;
+    padding: 8px;
   }
   .ticker-item .site-emoji {
-    font-size: 1.15rem;
-    flex-shrink: 0;
-    line-height: 1;
+    float: left;
+    width: 62px;
+    height: 62px;
+    margin: 0 14px 8px 0;
+    border: 1px solid var(--border);
+    background: var(--paper-white);
+    font-size: 2.1rem;
+    line-height: 60px;
+    text-align: center;
   }
   .ticker-item .site-fallback {
     display: none;
+    float: left;
+    width: 62px;
+    height: 62px;
+    margin: 0 14px 8px 0;
+    border: 1px solid var(--border);
+    background: var(--paper-white);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     font-style: normal;
     font-weight: 800;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     color: var(--red);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
+    letter-spacing: 0.03em;
+    padding: 4px;
   }
   .ticker-loading {
     display: inline-block;
@@ -337,6 +366,9 @@
     </div>
     <div class="ticker-track" id="tickerTrackB">
       <div class="ticker-set" id="tickerSetB"></div>
+    </div>
+    <div class="ticker-track" id="tickerTrackC">
+      <div class="ticker-set" id="tickerSetC"></div>
     </div>
   </div>
   <div class="ticker-controls">
@@ -535,6 +567,47 @@
     return age <= MAX_ITEM_AGE_MS && age >= -60 * 60 * 1000;
   }
 
+  // Pull an article/post image out of an RSS <item> or Atom <entry> so the
+  // ticker can show real photos instead of just site logos. Tries, in
+  // order: <enclosure>, Yahoo media RSS (media:content / media:thumbnail),
+  // then the first <img> found in content:encoded or the description/
+  // summary HTML (how most WordPress feeds embed their featured image).
+  function extractImage(node, isAtom) {
+    var enclosure = node.querySelector("enclosure");
+    if (enclosure) {
+      var encType = enclosure.getAttribute("type") || "";
+      var encUrl = enclosure.getAttribute("url");
+      if (encUrl && (encType.indexOf("image") === 0 || /\.(jpe?g|png|gif|webp)(\?|$)/i.test(encUrl))) {
+        return encUrl;
+      }
+    }
+    var mediaContents = node.getElementsByTagNameNS("*", "content");
+    for (var i = 0; i < mediaContents.length; i++) {
+      var mc = mediaContents[i];
+      var mUrl = mc.getAttribute("url");
+      var mMedium = mc.getAttribute("medium") || "";
+      var mType = mc.getAttribute("type") || "";
+      if (mUrl && (mMedium === "image" || mType.indexOf("image") === 0 || /\.(jpe?g|png|gif|webp)(\?|$)/i.test(mUrl))) {
+        return mUrl;
+      }
+    }
+    var thumbs = node.getElementsByTagNameNS("*", "thumbnail");
+    if (thumbs.length && thumbs[0].getAttribute("url")) {
+      return thumbs[0].getAttribute("url");
+    }
+    var htmlBlocks = [];
+    var encoded = node.getElementsByTagNameNS("*", "encoded");
+    if (encoded.length) htmlBlocks.push(encoded[0].textContent);
+    var descEl = node.querySelector("description") || node.querySelector("summary") || node.querySelector("content");
+    if (descEl) htmlBlocks.push(descEl.textContent);
+    for (var j = 0; j < htmlBlocks.length; j++) {
+      var block = htmlBlocks[j];
+      var match = block && block.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match && match[1]) return match[1];
+    }
+    return null;
+  }
+
   function parseFeed(text, source) {
     var doc = new DOMParser().parseFromString(text, "text/xml");
     if (doc.querySelector("parsererror")) return [];
@@ -558,7 +631,8 @@
         link = linkNode ? linkNode.textContent.trim() : "";
       }
       var date = extractDate(node, isAtom);
-      return { title: title, link: link, name: source.name, domain: source.domain, date: date, icon: source.icon };
+      var image = source.icon ? null : extractImage(node, isAtom);
+      return { title: title, link: link, name: source.name, domain: source.domain, date: date, icon: source.icon, image: image };
     }).filter(function (it) {
       return it.title && it.link && isEnglishTitle(it.title) && isRecent(it.date);
     }).sort(function (a, b) { return b.date - a.date; }).slice(0, ITEMS_PER_FEED);
@@ -611,26 +685,32 @@
     fallback.className = "site-fallback";
     fallback.textContent = it.name;
 
-    // Some smaller sites don't have a favicon Google has crawled, which
-    // shows up as a broken-image icon. Chain through a couple of icon
-    // services, then a direct favicon.ico guess, before giving up and
-    // showing the site name as text instead.
-    var iconSources = [
-      "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=64",
+    // Prefer the article/post's own image (pulled from the feed). If that
+    // fails to load — or the feed didn't have one — fall through to a
+    // chain of favicon services, then a direct favicon.ico guess, and
+    // finally the site name as text. Everything past the article image
+    // gets the smaller "logo" treatment (contain, not cover) since it's
+    // an icon, not a photo.
+    var logoSources = [
+      "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=128",
       "https://icons.duckduckgo.com/ip3/" + it.domain + ".ico",
       "https://" + it.domain + "/favicon.ico"
     ];
+    var sources = it.image ? [it.image].concat(logoSources) : logoSources;
+    var logoStartIndex = it.image ? 1 : 0;
     var sourceIndex = 0;
     img.onerror = function () {
       sourceIndex++;
-      if (sourceIndex < iconSources.length) {
-        img.src = iconSources[sourceIndex];
+      if (sourceIndex < sources.length) {
+        if (sourceIndex >= logoStartIndex) img.classList.add("is-logo");
+        img.src = sources[sourceIndex];
       } else {
         img.style.display = "none";
-        fallback.style.display = "inline";
+        fallback.style.display = "flex";
       }
     };
-    img.src = iconSources[0];
+    if (sourceIndex >= logoStartIndex) img.classList.add("is-logo");
+    img.src = sources[0];
 
     a.appendChild(img);
     a.appendChild(fallback);
@@ -638,40 +718,50 @@
     return a;
   }
 
-  // Split into two rows so different stories show on each — alternating
+  // Split into three rows so different stories show on each — alternating
   // items keeps the rows from just repeating the same source back to back.
   function renderItems(items) {
     var setA = document.getElementById("tickerSetA");
     var setB = document.getElementById("tickerSetB");
+    var setC = document.getElementById("tickerSetC");
     if (!items || items.length === 0) {
       setA.innerHTML = '<span class="ticker-loading">Wire’s down right now — browse the sources below.</span>';
       setB.innerHTML = "";
+      setC.innerHTML = "";
       return;
     }
-    var rowA = [], rowB = [];
-    items.forEach(function (it, i) { (i % 2 === 0 ? rowA : rowB).push(it); });
+    var rowA = [], rowB = [], rowC = [];
+    items.forEach(function (it, i) {
+      var row = i % 3 === 0 ? rowA : (i % 3 === 1 ? rowB : rowC);
+      row.push(it);
+    });
     setA.innerHTML = "";
     setB.innerHTML = "";
+    setC.innerHTML = "";
     rowA.forEach(function (it) { setA.appendChild(buildItemEl(it)); });
     rowB.forEach(function (it) { setB.appendChild(buildItemEl(it)); });
+    rowC.forEach(function (it) { setC.appendChild(buildItemEl(it)); });
   }
 
-  // Manual scroll controls — arrow buttons move both rows together by
+  // Manual scroll controls — arrow buttons move all three rows together by
   // roughly one "page" of visible items at a time.
   (function setupArrows() {
     var trackA = document.getElementById("tickerTrackA");
     var trackB = document.getElementById("tickerTrackB");
+    var trackC = document.getElementById("tickerTrackC");
     var prev = document.getElementById("tickerPrev");
     var next = document.getElementById("tickerNext");
     prev.addEventListener("click", function () {
       var d = -trackA.clientWidth * 0.8;
       trackA.scrollBy({ left: d, behavior: "smooth" });
       trackB.scrollBy({ left: d, behavior: "smooth" });
+      trackC.scrollBy({ left: d, behavior: "smooth" });
     });
     next.addEventListener("click", function () {
       var d = trackA.clientWidth * 0.8;
       trackA.scrollBy({ left: d, behavior: "smooth" });
       trackB.scrollBy({ left: d, behavior: "smooth" });
+      trackC.scrollBy({ left: d, behavior: "smooth" });
     });
   })();
 
