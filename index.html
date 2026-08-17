@@ -270,24 +270,28 @@
     align-items: flex-start;
   }
   .ticker-item {
-    position: relative;
-    display: block;
+    display: flex;
+    align-items: stretch;
     box-sizing: border-box;
     width: 380px;
     min-height: 140px;
-    padding: 16px 20px 16px 152px;
     text-decoration: none;
     color: var(--ink);
     white-space: normal;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
+    overflow: hidden;
   }
   .ticker-item .headline-text {
-    display: block;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
     font-weight: 700;
     font-size: 1.08rem;
     line-height: 1.36;
     white-space: normal;
+    padding: 16px 20px;
   }
   .ticker-item:hover {
     color: var(--red);
@@ -298,17 +302,15 @@
     border-color: var(--red);
   }
   /* Image/emoji/fallback fill the card edge-to-edge on the left, top and
-     bottom — full bleed, cropped to fit rather than padded — with only a
-     thin rule separating it from the headline text on the right. Absolute
-     positioning (top/bottom both set) means its own aspect ratio never
-     drives the card's height; the headline text decides that. */
+     bottom — full bleed, cropped to fit rather than padded. As a flex
+     item with the default stretch alignment and no height of its own, it
+     stretches to match whatever height the headline text ends up needing
+     — a well-supported flexbox behavior, unlike the equivalent trick with
+     absolute positioning against an auto-height container. */
   .ticker-item img,
   .ticker-item .site-emoji,
   .ticker-item .site-fallback {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    flex-shrink: 0;
     width: 132px;
     box-sizing: border-box;
     border-right: 1px solid var(--border);
@@ -335,7 +337,7 @@
     color: var(--red);
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    padding: 4px;
+    padding: 8px;
   }
   .ticker-loading {
     display: inline-block;
