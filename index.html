@@ -205,23 +205,13 @@
     position: relative;
     border-top: 3px double var(--rule);
   }
-  .wire-label {
-    text-align: center;
-    padding: 8px 0 2px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--red);
-  }
   .ticker-controls {
     background: #ece4d2;
-    border-bottom: 3px double var(--rule);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 14px;
-    padding: 8px 0 12px;
+    padding: 12px 0 12px;
   }
   .ticker-arrow {
     display: flex;
@@ -251,6 +241,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    border-bottom: 3px double var(--rule);
   }
   .ticker-track {
     display: flex;
@@ -357,18 +348,13 @@
 <body>
 
 <header>
-  <div class="masthead-top">Est. 2026 <span class="dot">·</span> The Warnimont Household <span class="dot">·</span> Chicago, Illinois</div>
-  <div class="topbar-inner">
-    <h1><span class="accent">Intentional</span> Internet</h1>
-    <p class="tagline">Forums and sites worth reading instead of scrolling.</p>
-  </div>
+  <div class="masthead-top">Est. 2026 <span class="dot">·</span> Chicago, Illinois</div>
   <div class="masthead-bottom">
     <span>Vol. I — No. 1</span><span class="dot">•</span><span>Forums &amp; Longform</span><span class="dot">•</span><span>No Algorithm Required</span>
   </div>
 </header>
 
 <div class="ticker-bar" id="tickerBar">
-  <div class="wire-label">— Latest Dispatches —</div>
   <div class="ticker-rows">
     <div class="ticker-track" id="tickerTrackA">
       <div class="ticker-set" id="tickerSetA"><span class="ticker-loading">Fetching today's dispatches…</span></div>
