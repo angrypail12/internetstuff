@@ -595,16 +595,31 @@
     if (thumbs.length && thumbs[0].getAttribute("url")) {
       return thumbs[0].getAttribute("url");
     }
-    var htmlBlocks = [];
-    var encoded = node.getElementsByTagNameNS("*", "encoded");
-    if (encoded.length) htmlBlocks.push(encoded[0].textContent);
-    var descEl = node.querySelector("description") || node.querySelector("summary") || node.querySelector("content");
-    if (descEl) htmlBlocks.push(descEl.textContent);
-    for (var j = 0; j < htmlBlocks.length; j++) {
-      var block = htmlBlocks[j];
-      var match = block && block.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match && match[1]) return match[1];
+    // Some feeds (WordPress's content:encoded) embed their HTML as CDATA —
+    // the <img> tag survives only as literal text, so we regex the text.
+    // Others (this Sun-Times Atom feed, notably) embed it as real,
+    // unescaped child markup — the <img> is an actual DOM element there,
+    // and its src attribute won't show up in textContent at all. Check
+    // both shapes for each candidate container.
+    function findImage(el) {
+      if (!el) return null;
+      var imgEl = el.querySelector("img");
+      if (imgEl) {
+        var src = imgEl.getAttribute("src");
+        if (src) return src;
+      }
+      var text = el.textContent;
+      var match = text && text.match(/<img[^>]+src=["']([^"']+)["']/i);
+      return match ? match[1] : null;
     }
+    var encoded = node.getElementsByTagNameNS("*", "encoded");
+    if (encoded.length) {
+      var fromEncoded = findImage(encoded[0]);
+      if (fromEncoded) return fromEncoded;
+    }
+    var descEl = node.querySelector("description") || node.querySelector("summary") || node.querySelector("content");
+    var fromDesc = findImage(descEl);
+    if (fromDesc) return fromDesc;
     return null;
   }
 
