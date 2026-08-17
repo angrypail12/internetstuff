@@ -24,7 +24,8 @@
     font-family: 'PT Serif', Georgia, 'Times New Roman', serif;
     background: var(--paper);
     color: var(--ink);
-    line-height: 1.5;
+    font-size: 17px;
+    line-height: 1.6;
   }
 
   /* ---- Masthead ---- */
@@ -135,9 +136,9 @@
   }
   .card .blurb {
     margin: 0 0 14px;
-    font-size: 0.95rem;
-    font-style: italic;
-    color: var(--muted);
+    font-size: 1.05rem;
+    font-style: normal;
+    color: #3f3b32;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--border);
   }
@@ -151,12 +152,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 11px 2px;
+    padding: 13px 2px;
     border-bottom: 1px dashed var(--border);
     text-decoration: none;
     color: var(--ink);
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     transition: color 0.12s ease;
   }
   .tile:last-child {
@@ -179,8 +180,8 @@
   }
   .tile .desc {
     font-weight: 400;
-    font-style: italic;
-    font-size: 0.82rem;
+    font-style: normal;
+    font-size: 0.9rem;
     color: var(--muted);
   }
   .tile .arrow {
@@ -271,40 +272,41 @@
   .ticker-item {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 26px;
+    gap: 12px;
+    padding: 16px 28px;
     text-decoration: none;
-    color: #f2ede0;
-    font-style: italic;
-    font-size: 1rem;
+    color: #fbf8f2;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.01em;
     white-space: nowrap;
-    border-right: 1px solid rgba(242,237,224,0.2);
+    border-right: 1px solid rgba(242,237,224,0.25);
   }
   .ticker-item:hover {
-    color: var(--red);
+    color: #ffb4b4;
   }
   .ticker-item img {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
-    border: 1px solid rgba(242,237,224,0.35);
+    border: 1px solid rgba(242,237,224,0.4);
   }
   .ticker-item .site-fallback {
     display: none;
     font-style: normal;
-    font-weight: 700;
-    font-size: 0.75rem;
-    color: var(--red);
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #ffb4b4;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     flex-shrink: 0;
   }
   .ticker-loading {
     display: inline-block;
-    padding: 20px 30px;
-    color: #9c968a;
-    font-style: italic;
-    font-size: 0.95rem;
+    padding: 22px 30px;
+    color: #cfc9bb;
+    font-style: normal;
+    font-size: 1.1rem;
   }
 </style>
 </head>
