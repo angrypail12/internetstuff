@@ -267,14 +267,14 @@
   }
   .ticker-set {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
   }
   .ticker-item {
     display: flex;
     align-items: stretch;
     box-sizing: border-box;
     width: 380px;
-    min-height: 140px;
+    height: 184px;
     text-decoration: none;
     color: var(--ink);
     white-space: normal;
@@ -292,6 +292,12 @@
     line-height: 1.36;
     white-space: normal;
     padding: 16px 20px;
+  }
+  .ticker-item .headline-text span {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .ticker-item:hover {
     color: var(--red);
@@ -765,7 +771,9 @@
 
     var title = document.createElement("span");
     title.className = "headline-text";
-    title.textContent = it.title;
+    var titleText = document.createElement("span");
+    titleText.textContent = it.title;
+    title.appendChild(titleText);
 
     // A few sources (forums, mostly) don't have a favicon any icon
     // service reliably serves — for those we skip images entirely and
