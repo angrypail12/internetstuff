@@ -500,7 +500,7 @@
     { name: "The A.V. Club", domain: "avclub.com", feed: "https://www.avclub.com/rss.xml" },
     { name: "Chicago Sun-Times", domain: "suntimes.com", feed: "https://chicago.suntimes.com/rss/index.xml" },
     { name: "The Daily Hoosier", domain: "thedailyhoosier.com", feed: "https://www.thedailyhoosier.com/feed/" },
-    { name: "Inside the Hall", domain: "insidethehall.com", feed: "https://www.insidethehall.com/feed/" },
+    { name: "Inside the Hall", domain: "insidethehall.com", feed: "https://www.insidethehall.com/feed/", icon: "🏀" },
     { name: "Block Club Chicago", domain: "blockclubchicago.org", feed: "https://blockclubchicago.org/feed/" },
     { name: "WBEZ", domain: "wbez.org", feed: "https://www.wbez.org/feeds/wbez/rss.xml" },
     { name: "BroadwayWorld Chicago", domain: "broadwayworld.com", feed: "https://www.broadwayworld.com/chicago/rss/regionalnews.xml" },
@@ -706,9 +706,13 @@
     // finally the site name as text. Everything past the article image
     // gets the smaller "logo" treatment (contain, not cover) since it's
     // an icon, not a photo.
+    // DuckDuckGo's icon service goes first — it tends to fail cleanly
+    // (triggering onerror) when it has nothing, whereas Google's favicon
+    // endpoint often returns a near-blank placeholder image with a 200
+    // status for less-common domains, which onerror never catches.
     var logoSources = [
-      "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=128",
       "https://icons.duckduckgo.com/ip3/" + it.domain + ".ico",
+      "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=128",
       "https://" + it.domain + "/favicon.ico"
     ];
     var sources = it.image ? [it.image].concat(logoSources) : logoSources;
