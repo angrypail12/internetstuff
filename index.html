@@ -586,15 +586,31 @@
     a.rel = "noopener";
 
     var img = document.createElement("img");
-    img.src = "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=64";
     img.alt = "";
     var fallback = document.createElement("span");
     fallback.className = "site-fallback";
     fallback.textContent = it.name;
+
+    // Some smaller sites (forums especially) don't have a favicon Google
+    // has crawled, which shows up as a broken-image icon. Chain through a
+    // couple of icon services, then a direct favicon.ico guess, before
+    // giving up and showing the site name as text instead.
+    var iconSources = [
+      "https://www.google.com/s2/favicons?domain=" + it.domain + "&sz=64",
+      "https://icons.duckduckgo.com/ip3/" + it.domain + ".ico",
+      "https://" + it.domain + "/favicon.ico"
+    ];
+    var sourceIndex = 0;
     img.onerror = function () {
-      img.style.display = "none";
-      fallback.style.display = "inline";
+      sourceIndex++;
+      if (sourceIndex < iconSources.length) {
+        img.src = iconSources[sourceIndex];
+      } else {
+        img.style.display = "none";
+        fallback.style.display = "inline";
+      }
     };
+    img.src = iconSources[0];
 
     var title = document.createElement("span");
     title.textContent = it.title;
