@@ -234,7 +234,10 @@
   .ticker-track {
     display: flex;
     overflow-x: auto;
-    scroll-behavior: smooth;
+    /* No scroll-behavior:smooth here on purpose — the arrow buttons and the
+       manual-scroll mirror both drive scrollLeft themselves, frame by frame,
+       via JS. Leaving the browser's own smooth-scroll in the mix caused the
+       other two rows to visibly trail behind whichever one was touched. */
     white-space: nowrap;
     scrollbar-width: none;
   }
@@ -847,7 +850,16 @@
   }
 
   // Manual scroll controls — arrow buttons move all three rows together by
-  // roughly one "page" of visible items at a time.
+  // roughly one "page" of visible items at a time. Every kind of scrolling
+  // here — arrow clicks AND manual trackpad/touch/wheel scrolling — is
+  // driven entirely by our own JS writes to scrollLeft, on all three rows,
+  // every animation frame. There's no CSS "scroll-behavior: smooth" and no
+  // native scrollTo()/scrollBy() smoothing involved anywhere, on purpose:
+  // every previous attempt that leaned on the browser's own smooth-scrolling
+  // for any part of this left some residual easing in place, which is what
+  // made the two un-touched rows visibly trail behind the one being scrolled.
+  // Fully manual, frame-synchronous writes are the only way to guarantee all
+  // three rows show the exact same scrollLeft in the exact same frame.
   (function setupArrows() {
     var trackA = document.getElementById("tickerTrackA");
     var trackB = document.getElementById("tickerTrackB");
@@ -856,50 +868,50 @@
     var prev = document.getElementById("tickerPrev");
     var next = document.getElementById("tickerNext");
 
-    // Arrow-driven scrolling and manual (trackpad/touch) scrolling are kept
-    // as two separate systems rather than one shared mechanism — mixing them
-    // is what caused the last version to misbehave (arrows barely moving,
-    // rows fighting each other on manual scroll). While "arrowActive" is
-    // true, the manual-scroll mirror below stays out of the way entirely and
-    // lets the three independent smooth-scroll animations run untouched,
-    // which is what made the arrows work well in the first place.
-    var arrowActive = false;
-    var arrowActiveTimer = null;
-    function markArrowActive() {
-      arrowActive = true;
-      clearTimeout(arrowActiveTimer);
-      arrowActiveTimer = setTimeout(function () { arrowActive = false; }, 650);
+    function maxScroll(t) { return Math.max(0, t.scrollWidth - t.clientWidth); }
+    function setAll(left) {
+      tracks.forEach(function (t) { t.scrollLeft = left; });
     }
 
+    // Arrow buttons: hand-rolled ease-out animation. We compute one scroll
+    // position per frame and write it to all three rows in the same
+    // statement — there's no per-row animation to fall out of sync with the
+    // others, because there's only ever one animation driving all three.
+    var arrowAnimId = null;
+    function animateArrowScroll(delta) {
+      if (arrowAnimId) cancelAnimationFrame(arrowAnimId);
+      var startLeft = trackA.scrollLeft;
+      var target = Math.max(0, Math.min(maxScroll(trackA), startLeft + delta));
+      var startTime = null;
+      var duration = 420;
+      function ease(t) { return 1 - Math.pow(1 - t, 3); }
+      function step(ts) {
+        if (startTime === null) startTime = ts;
+        var progress = Math.min(1, (ts - startTime) / duration);
+        setAll(startLeft + (target - startLeft) * ease(progress));
+        if (progress < 1) {
+          arrowAnimId = requestAnimationFrame(step);
+        } else {
+          arrowAnimId = null;
+        }
+      }
+      arrowAnimId = requestAnimationFrame(step);
+    }
     prev.addEventListener("click", function () {
-      markArrowActive();
-      var d = -trackA.clientWidth * 0.8;
-      trackA.scrollBy({ left: d, behavior: "smooth" });
-      trackB.scrollBy({ left: d, behavior: "smooth" });
-      trackC.scrollBy({ left: d, behavior: "smooth" });
+      animateArrowScroll(-trackA.clientWidth * 0.8);
     });
     next.addEventListener("click", function () {
-      markArrowActive();
-      var d = trackA.clientWidth * 0.8;
-      trackA.scrollBy({ left: d, behavior: "smooth" });
-      trackB.scrollBy({ left: d, behavior: "smooth" });
-      trackC.scrollBy({ left: d, behavior: "smooth" });
+      animateArrowScroll(trackA.clientWidth * 0.8);
     });
 
-    // Manual scrolling (trackpad swipe, touch drag, mouse wheel). Reacting
-    // to the browser's native "scroll" event (the previous approach) still
-    // lagged, especially on iPad — touch-driven scroll events get batched
-    // and throttled by the browser during momentum/inertia scrolling, so the
-    // mirror only heard about position changes in irregular, delayed bursts.
-    // Instead, track whichever row the user last touched/wheeled as the
-    // "active" row, and copy its scrollLeft onto the other two on every
-    // animation frame — a steady 60fps clock that's completely independent
-    // of how choppy or delayed the source's own scroll events are. The other
-    // two rows end up reading the active row's real-time position directly
-    // rather than waiting to be told about it.
+    // Manual scrolling (trackpad swipe, touch drag, mouse wheel) — track
+    // whichever row the user last touched/wheeled as the "active" row, and
+    // copy its scrollLeft onto the other two on every animation frame, as a
+    // plain instant assignment (no CSS or scrollTo smoothing anywhere left
+    // to interfere with that).
     var activeTrack = null;
     function setActive(t) {
-      if (!arrowActive) activeTrack = t;
+      if (!arrowAnimId) activeTrack = t;
     }
     tracks.forEach(function (t) {
       t.addEventListener("touchstart", function () { setActive(t); }, { passive: true });
@@ -909,14 +921,12 @@
 
     var lastSyncedLeft = null;
     (function syncLoop() {
-      if (activeTrack && !arrowActive) {
+      if (activeTrack && !arrowAnimId) {
         var left = activeTrack.scrollLeft;
         if (left !== lastSyncedLeft) {
           lastSyncedLeft = left;
           tracks.forEach(function (t) {
-            if (t !== activeTrack && t.scrollLeft !== left) {
-              t.scrollTo({ left: left, behavior: "auto" });
-            }
+            if (t !== activeTrack && t.scrollLeft !== left) t.scrollLeft = left;
           });
         }
       }
