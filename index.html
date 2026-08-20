@@ -906,9 +906,8 @@
 
     // Manual scrolling (trackpad swipe, touch drag, mouse wheel) — track
     // whichever row the user last touched/wheeled as the "active" row, and
-    // copy its scrollLeft onto the other two on every animation frame, as a
-    // plain instant assignment (no CSS or scrollTo smoothing anywhere left
-    // to interfere with that).
+    // copy its scrollLeft onto the other two, as a plain instant assignment
+    // (no CSS or scrollTo smoothing anywhere left to interfere with that).
     var activeTrack = null;
     function setActive(t) {
       if (!arrowAnimId) activeTrack = t;
@@ -920,16 +919,31 @@
     });
 
     var lastSyncedLeft = null;
+    function syncFromActive() {
+      if (!activeTrack || arrowAnimId) return;
+      var left = activeTrack.scrollLeft;
+      if (left === lastSyncedLeft) return;
+      lastSyncedLeft = left;
+      tracks.forEach(function (t) {
+        if (t !== activeTrack && t.scrollLeft !== left) t.scrollLeft = left;
+      });
+    }
+    // Touch/trackpad scrolling is handled by the browser off the main
+    // thread, purely for smoothness — our JS only ever finds out about it
+    // when a "scroll" event or the next animation frame lets it know, both
+    // of which land a fraction of a frame after the row itself actually
+    // moved. Reacting to whichever of the two fires first — the native
+    // "scroll" event (usually the faster of the two) as the primary trigger,
+    // with the requestAnimationFrame loop underneath as a continuous
+    // backstop in case a browser ever throttles or skips one — keeps that
+    // unavoidable gap as small as it can practically get.
+    tracks.forEach(function (t) {
+      t.addEventListener("scroll", function () {
+        if (t === activeTrack) syncFromActive();
+      }, { passive: true });
+    });
     (function syncLoop() {
-      if (activeTrack && !arrowAnimId) {
-        var left = activeTrack.scrollLeft;
-        if (left !== lastSyncedLeft) {
-          lastSyncedLeft = left;
-          tracks.forEach(function (t) {
-            if (t !== activeTrack && t.scrollLeft !== left) t.scrollLeft = left;
-          });
-        }
-      }
+      syncFromActive();
       requestAnimationFrame(syncLoop);
     })();
   })();
