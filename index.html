@@ -886,35 +886,42 @@
       trackC.scrollBy({ left: d, behavior: "smooth" });
     });
 
-    // Manual scrolling (trackpad swipe, touch drag, mouse wheel) — mirror
-    // scrollLeft across all three rows on every native "scroll" event.
-    // Two things that broke this the first time around, both fixed here:
-    //   1. The mirrored write used to be a plain "t.scrollLeft = left"
-    //      assignment, which inherits the row's own CSS "scroll-behavior:
-    //      smooth" and therefore animates instead of snapping — so every
-    //      scroll tick kicked off a new competing animation on the other two
-    //      rows, and they never caught up. Using scrollTo(..., { behavior:
-    //      "auto" }) forces an instant jump regardless of that CSS rule.
-    //   2. Setting scrollLeft fires its own "scroll" event on the NEXT task,
-    //      not synchronously — so resetting the guard flag immediately after
-    //      writing (as before) reset it too early, and the delayed events
-    //      from our own writes slipped through and re-triggered the mirror,
-    //      causing the jitter. Resetting the guard on the next animation
-    //      frame instead gives those delayed events time to arrive first.
-    var syncing = false;
-    tracks.forEach(function (source) {
-      source.addEventListener("scroll", function () {
-        if (arrowActive || syncing) return;
-        syncing = true;
-        var left = source.scrollLeft;
-        tracks.forEach(function (t) {
-          if (t !== source && t.scrollLeft !== left) {
-            t.scrollTo({ left: left, behavior: "auto" });
-          }
-        });
-        requestAnimationFrame(function () { syncing = false; });
-      });
+    // Manual scrolling (trackpad swipe, touch drag, mouse wheel). Reacting
+    // to the browser's native "scroll" event (the previous approach) still
+    // lagged, especially on iPad — touch-driven scroll events get batched
+    // and throttled by the browser during momentum/inertia scrolling, so the
+    // mirror only heard about position changes in irregular, delayed bursts.
+    // Instead, track whichever row the user last touched/wheeled as the
+    // "active" row, and copy its scrollLeft onto the other two on every
+    // animation frame — a steady 60fps clock that's completely independent
+    // of how choppy or delayed the source's own scroll events are. The other
+    // two rows end up reading the active row's real-time position directly
+    // rather than waiting to be told about it.
+    var activeTrack = null;
+    function setActive(t) {
+      if (!arrowActive) activeTrack = t;
+    }
+    tracks.forEach(function (t) {
+      t.addEventListener("touchstart", function () { setActive(t); }, { passive: true });
+      t.addEventListener("pointerdown", function () { setActive(t); }, { passive: true });
+      t.addEventListener("wheel", function () { setActive(t); }, { passive: true });
     });
+
+    var lastSyncedLeft = null;
+    (function syncLoop() {
+      if (activeTrack && !arrowActive) {
+        var left = activeTrack.scrollLeft;
+        if (left !== lastSyncedLeft) {
+          lastSyncedLeft = left;
+          tracks.forEach(function (t) {
+            if (t !== activeTrack && t.scrollLeft !== left) {
+              t.scrollTo({ left: left, behavior: "auto" });
+            }
+          });
+        }
+      }
+      requestAnimationFrame(syncLoop);
+    })();
   })();
 
   function readCache() {
