@@ -855,36 +855,64 @@
     var tracks = [trackA, trackB, trackC];
     var prev = document.getElementById("tickerPrev");
     var next = document.getElementById("tickerNext");
+
+    // Arrow-driven scrolling and manual (trackpad/touch) scrolling are kept
+    // as two separate systems rather than one shared mechanism — mixing them
+    // is what caused the last version to misbehave (arrows barely moving,
+    // rows fighting each other on manual scroll). While "arrowActive" is
+    // true, the manual-scroll mirror below stays out of the way entirely and
+    // lets the three independent smooth-scroll animations run untouched,
+    // which is what made the arrows work well in the first place.
+    var arrowActive = false;
+    var arrowActiveTimer = null;
+    function markArrowActive() {
+      arrowActive = true;
+      clearTimeout(arrowActiveTimer);
+      arrowActiveTimer = setTimeout(function () { arrowActive = false; }, 650);
+    }
+
     prev.addEventListener("click", function () {
+      markArrowActive();
       var d = -trackA.clientWidth * 0.8;
       trackA.scrollBy({ left: d, behavior: "smooth" });
       trackB.scrollBy({ left: d, behavior: "smooth" });
       trackC.scrollBy({ left: d, behavior: "smooth" });
     });
     next.addEventListener("click", function () {
+      markArrowActive();
       var d = trackA.clientWidth * 0.8;
       trackA.scrollBy({ left: d, behavior: "smooth" });
       trackB.scrollBy({ left: d, behavior: "smooth" });
       trackC.scrollBy({ left: d, behavior: "smooth" });
     });
 
-    // Each row is its own independently-scrollable element, so a trackpad
-    // swipe, touch drag, or scrollbar drag on ONE row only ever moved that
-    // row natively — the arrow buttons were the only thing driving all three
-    // together. Mirror scrollLeft across all three on every native "scroll"
-    // event so manual scrolling stays in lockstep too. The "syncing" guard
-    // stops the mirrored writes from re-triggering their own scroll events
-    // and looping.
+    // Manual scrolling (trackpad swipe, touch drag, mouse wheel) — mirror
+    // scrollLeft across all three rows on every native "scroll" event.
+    // Two things that broke this the first time around, both fixed here:
+    //   1. The mirrored write used to be a plain "t.scrollLeft = left"
+    //      assignment, which inherits the row's own CSS "scroll-behavior:
+    //      smooth" and therefore animates instead of snapping — so every
+    //      scroll tick kicked off a new competing animation on the other two
+    //      rows, and they never caught up. Using scrollTo(..., { behavior:
+    //      "auto" }) forces an instant jump regardless of that CSS rule.
+    //   2. Setting scrollLeft fires its own "scroll" event on the NEXT task,
+    //      not synchronously — so resetting the guard flag immediately after
+    //      writing (as before) reset it too early, and the delayed events
+    //      from our own writes slipped through and re-triggered the mirror,
+    //      causing the jitter. Resetting the guard on the next animation
+    //      frame instead gives those delayed events time to arrive first.
     var syncing = false;
     tracks.forEach(function (source) {
       source.addEventListener("scroll", function () {
-        if (syncing) return;
+        if (arrowActive || syncing) return;
         syncing = true;
         var left = source.scrollLeft;
         tracks.forEach(function (t) {
-          if (t !== source) t.scrollLeft = left;
+          if (t !== source && t.scrollLeft !== left) {
+            t.scrollTo({ left: left, behavior: "auto" });
+          }
         });
-        syncing = false;
+        requestAnimationFrame(function () { syncing = false; });
       });
     });
   })();
