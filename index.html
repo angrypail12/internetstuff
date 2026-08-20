@@ -519,11 +519,25 @@
   }
 
   // Reject titles containing non-Latin scripts (Cyrillic, CJK, Arabic,
-  // Hebrew, Hangul, Thai, Devanagari, Greek, etc.) as a simple English-only
-  // filter — good enough since these sources are all normally English.
+  // Hebrew, Hangul, Thai, Devanagari, Greek, etc.).
   var NON_LATIN_RE = /[Ѐ-ӿ԰-֏֐-׿؀-ۿ܀-ݏऀ-ॿ฀-๿Ⴀ-ჿᄀ-ᇿ぀-ヿ㐀-䶿一-鿿가-힣Ͱ-Ͽ]/;
+  // Sun-Times runs a Spanish-language section (La Voz Chicago) through the
+  // same feed we pull from, and Spanish/French/etc. use the same Latin
+  // alphabet the script check above can't catch. Flag accented characters
+  // those languages use but English essentially never does, plus a set of
+  // common Spanish stopwords/articles, and require a couple of hits before
+  // rejecting so we don't false-positive on an English title that happens
+  // to contain one loanword or name.
+  var FOREIGN_DIACRITIC_RE = /[áéíóúñ¿¡àèìòùâêîôûüëïöçãõ]/i;
+  var SPANISH_STOPWORD_RE = /\b(el|la|los|las|de|del|en|por|para|con|una|uno|que|más|pero|contra|sin|sobre|entre|hasta|desde|este|esta|estos|estas|su|sus|al|es|son|fue|ser|como|muy|si)\b/gi;
   function isEnglishTitle(title) {
-    return !NON_LATIN_RE.test(title);
+    if (NON_LATIN_RE.test(title)) return false;
+    var diacriticHits = (title.match(FOREIGN_DIACRITIC_RE) || []).length;
+    var stopwordHits = (title.match(SPANISH_STOPWORD_RE) || []).length;
+    if (diacriticHits >= 2 || stopwordHits >= 2 || (diacriticHits >= 1 && stopwordHits >= 1)) {
+      return false;
+    }
+    return true;
   }
 
   // Pull a publish/update timestamp out of an RSS <item> or Atom <entry>.
@@ -838,6 +852,7 @@
     var trackA = document.getElementById("tickerTrackA");
     var trackB = document.getElementById("tickerTrackB");
     var trackC = document.getElementById("tickerTrackC");
+    var tracks = [trackA, trackB, trackC];
     var prev = document.getElementById("tickerPrev");
     var next = document.getElementById("tickerNext");
     prev.addEventListener("click", function () {
@@ -851,6 +866,26 @@
       trackA.scrollBy({ left: d, behavior: "smooth" });
       trackB.scrollBy({ left: d, behavior: "smooth" });
       trackC.scrollBy({ left: d, behavior: "smooth" });
+    });
+
+    // Each row is its own independently-scrollable element, so a trackpad
+    // swipe, touch drag, or scrollbar drag on ONE row only ever moved that
+    // row natively — the arrow buttons were the only thing driving all three
+    // together. Mirror scrollLeft across all three on every native "scroll"
+    // event so manual scrolling stays in lockstep too. The "syncing" guard
+    // stops the mirrored writes from re-triggering their own scroll events
+    // and looping.
+    var syncing = false;
+    tracks.forEach(function (source) {
+      source.addEventListener("scroll", function () {
+        if (syncing) return;
+        syncing = true;
+        var left = source.scrollLeft;
+        tracks.forEach(function (t) {
+          if (t !== source) t.scrollLeft = left;
+        });
+        syncing = false;
+      });
     });
   })();
 
