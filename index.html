@@ -233,16 +233,24 @@
   }
   .ticker-track {
     display: flex;
-    overflow-x: auto;
-    /* No scroll-behavior:smooth here on purpose — the arrow buttons and the
-       manual-scroll mirror both drive scrollLeft themselves, frame by frame,
-       via JS. Leaving the browser's own smooth-scroll in the mix caused the
-       other two rows to visibly trail behind whichever one was touched. */
+    /* overflow:hidden, not auto — these rows are no longer natively
+       scrollable at all. All three are driven by one shared position that
+       JS applies as a CSS transform on .ticker-set, in the same statement,
+       every frame. Mirroring three independent native-scroll elements (the
+       previous approach) always had a sliver of lag baked in, because touch
+       and trackpad scrolling happen on a separate browser thread from our
+       JS — reacting to one row's position was always a beat behind the row
+       itself moving. A single shared value with no native scrolling
+       involved removes that gap entirely. */
+    overflow: hidden;
     white-space: nowrap;
-    scrollbar-width: none;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
   }
-  .ticker-track::-webkit-scrollbar {
-    display: none;
+  .ticker-track:active {
+    cursor: grabbing;
   }
   .ticker-track + .ticker-track {
     border-top: 1px solid var(--border);
@@ -250,6 +258,7 @@
   .ticker-set {
     display: flex;
     align-items: stretch;
+    will-change: transform;
   }
   .ticker-item {
     display: flex;
@@ -307,6 +316,9 @@
   .ticker-item img,
   .ticker-item img.is-logo {
     object-fit: cover;
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
   }
   .ticker-item .site-emoji {
     font-size: 3.2rem;
@@ -849,103 +861,164 @@
     rowC.forEach(function (it) { setC.appendChild(buildItemEl(it)); });
   }
 
-  // Manual scroll controls — arrow buttons move all three rows together by
-  // roughly one "page" of visible items at a time. Every kind of scrolling
-  // here — arrow clicks AND manual trackpad/touch/wheel scrolling — is
-  // driven entirely by our own JS writes to scrollLeft, on all three rows,
-  // every animation frame. There's no CSS "scroll-behavior: smooth" and no
-  // native scrollTo()/scrollBy() smoothing involved anywhere, on purpose:
-  // every previous attempt that leaned on the browser's own smooth-scrolling
-  // for any part of this left some residual easing in place, which is what
-  // made the two un-touched rows visibly trail behind the one being scrolled.
-  // Fully manual, frame-synchronous writes are the only way to guarantee all
-  // three rows show the exact same scrollLeft in the exact same frame.
-  (function setupArrows() {
+  // Ticker rows are no longer natively scrollable (see .ticker-track's
+  // overflow:hidden above). One shared "offset" value drives all three rows
+  // at once via CSS transform — arrow clicks animate it, dragging/swiping
+  // any row updates it directly, and every write lands on all three .ticker
+  // -set elements in the same statement. There's nothing left to go out of
+  // sync, because there is only ever one position being tracked, not three
+  // separate scroll positions being mirrored to each other after the fact.
+  (function setupTicker() {
     var trackA = document.getElementById("tickerTrackA");
     var trackB = document.getElementById("tickerTrackB");
     var trackC = document.getElementById("tickerTrackC");
     var tracks = [trackA, trackB, trackC];
+    var setA = document.getElementById("tickerSetA");
+    var setB = document.getElementById("tickerSetB");
+    var setC = document.getElementById("tickerSetC");
+    var sets = [setA, setB, setC];
     var prev = document.getElementById("tickerPrev");
     var next = document.getElementById("tickerNext");
 
-    function maxScroll(t) { return Math.max(0, t.scrollWidth - t.clientWidth); }
-    function setAll(left) {
-      tracks.forEach(function (t) { t.scrollLeft = left; });
+    var offset = 0; // shared translateX, always between minOffset() and 0
+
+    function applyOffset() {
+      var t = "translateX(" + offset + "px)";
+      sets.forEach(function (s) { s.style.transform = t; });
+    }
+    function minOffset() {
+      var widest = 0;
+      sets.forEach(function (s) { widest = Math.max(widest, s.scrollWidth); });
+      return -Math.max(0, widest - trackA.clientWidth);
+    }
+    function clamp(v) {
+      var min = minOffset();
+      if (v < min) return min;
+      if (v > 0) return 0;
+      return v;
     }
 
-    // Arrow buttons: hand-rolled ease-out animation. We compute one scroll
-    // position per frame and write it to all three rows in the same
-    // statement — there's no per-row animation to fall out of sync with the
-    // others, because there's only ever one animation driving all three.
-    var arrowAnimId = null;
-    function animateArrowScroll(delta) {
-      if (arrowAnimId) cancelAnimationFrame(arrowAnimId);
-      var startLeft = trackA.scrollLeft;
-      var target = Math.max(0, Math.min(maxScroll(trackA), startLeft + delta));
+    // ---- Arrow buttons: one hand-rolled ease-out animation ----
+    var animId = null;
+    function stopAnim() {
+      if (animId) { cancelAnimationFrame(animId); animId = null; }
+    }
+    function animateTo(target) {
+      stopAnim();
+      var start = offset;
+      target = clamp(target);
       var startTime = null;
       var duration = 420;
       function ease(t) { return 1 - Math.pow(1 - t, 3); }
       function step(ts) {
         if (startTime === null) startTime = ts;
         var progress = Math.min(1, (ts - startTime) / duration);
-        setAll(startLeft + (target - startLeft) * ease(progress));
+        offset = start + (target - start) * ease(progress);
+        applyOffset();
         if (progress < 1) {
-          arrowAnimId = requestAnimationFrame(step);
+          animId = requestAnimationFrame(step);
         } else {
-          arrowAnimId = null;
+          animId = null;
         }
       }
-      arrowAnimId = requestAnimationFrame(step);
+      animId = requestAnimationFrame(step);
     }
     prev.addEventListener("click", function () {
-      animateArrowScroll(-trackA.clientWidth * 0.8);
+      animateTo(offset + trackA.clientWidth * 0.8);
     });
     next.addEventListener("click", function () {
-      animateArrowScroll(trackA.clientWidth * 0.8);
+      animateTo(offset - trackA.clientWidth * 0.8);
     });
 
-    // Manual scrolling (trackpad swipe, touch drag, mouse wheel) — track
-    // whichever row the user last touched/wheeled as the "active" row, and
-    // copy its scrollLeft onto the other two, as a plain instant assignment
-    // (no CSS or scrollTo smoothing anywhere left to interfere with that).
-    var activeTrack = null;
-    function setActive(t) {
-      if (!arrowAnimId) activeTrack = t;
+    // ---- Drag / swipe (mouse, touch, and pen, all via Pointer Events) ----
+    var dragging = false;
+    var dragMoved = false;
+    var dragStartX = 0;
+    var dragStartOffset = 0;
+    var lastX = 0;
+    var lastT = 0;
+    var velocity = 0; // px per ms
+    var momentumId = null;
+    function stopMomentum() {
+      if (momentumId) { cancelAnimationFrame(momentumId); momentumId = null; }
     }
+
+    function onPointerDown(e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      stopAnim();
+      stopMomentum();
+      dragging = true;
+      dragMoved = false;
+      dragStartX = e.clientX;
+      dragStartOffset = offset;
+      lastX = e.clientX;
+      lastT = performance.now();
+      velocity = 0;
+    }
+    function onPointerMove(e) {
+      if (!dragging) return;
+      var x = e.clientX;
+      if (Math.abs(x - dragStartX) > 6) dragMoved = true;
+      var now = performance.now();
+      var dt = now - lastT || 16;
+      velocity = (x - lastX) / dt;
+      lastX = x;
+      lastT = now;
+      offset = clamp(dragStartOffset + (x - dragStartX));
+      applyOffset();
+    }
+    function onPointerUp() {
+      if (!dragging) return;
+      dragging = false;
+      var v = velocity * 16; // approximate px/frame at release
+      function step() {
+        offset = clamp(offset + v);
+        applyOffset();
+        v *= 0.94;
+        if (offset === minOffset() || offset === 0) v = 0;
+        if (Math.abs(v) > 0.4) {
+          momentumId = requestAnimationFrame(step);
+        } else {
+          momentumId = null;
+        }
+      }
+      if (Math.abs(v) > 0.4) momentumId = requestAnimationFrame(step);
+    }
+
     tracks.forEach(function (t) {
-      t.addEventListener("touchstart", function () { setActive(t); }, { passive: true });
-      t.addEventListener("pointerdown", function () { setActive(t); }, { passive: true });
-      t.addEventListener("wheel", function () { setActive(t); }, { passive: true });
+      t.addEventListener("pointerdown", onPointerDown);
+      // A drag that moved more than a few pixels shouldn't also fire the
+      // underlying ticker-item link's navigation — capture-phase click
+      // guard, same pattern any drag-to-scroll carousel needs.
+      t.addEventListener("click", function (e) {
+        if (dragMoved) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+    });
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerUp);
+
+    // ---- Trackpad two-finger swipe / mouse wheel ----
+    tracks.forEach(function (t) {
+      t.addEventListener("wheel", function (e) {
+        if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) return; // let vertical page scroll through untouched
+        e.preventDefault();
+        stopAnim();
+        stopMomentum();
+        offset = clamp(offset - e.deltaX);
+        applyOffset();
+      }, { passive: false });
     });
 
-    var lastSyncedLeft = null;
-    function syncFromActive() {
-      if (!activeTrack || arrowAnimId) return;
-      var left = activeTrack.scrollLeft;
-      if (left === lastSyncedLeft) return;
-      lastSyncedLeft = left;
-      tracks.forEach(function (t) {
-        if (t !== activeTrack && t.scrollLeft !== left) t.scrollLeft = left;
-      });
-    }
-    // Touch/trackpad scrolling is handled by the browser off the main
-    // thread, purely for smoothness — our JS only ever finds out about it
-    // when a "scroll" event or the next animation frame lets it know, both
-    // of which land a fraction of a frame after the row itself actually
-    // moved. Reacting to whichever of the two fires first — the native
-    // "scroll" event (usually the faster of the two) as the primary trigger,
-    // with the requestAnimationFrame loop underneath as a continuous
-    // backstop in case a browser ever throttles or skips one — keeps that
-    // unavoidable gap as small as it can practically get.
-    tracks.forEach(function (t) {
-      t.addEventListener("scroll", function () {
-        if (t === activeTrack) syncFromActive();
-      }, { passive: true });
+    // Re-clamp on resize so a viewport change can't leave the rows scrolled
+    // past their (now different) end.
+    window.addEventListener("resize", function () {
+      offset = clamp(offset);
+      applyOffset();
     });
-    (function syncLoop() {
-      syncFromActive();
-      requestAnimationFrame(syncLoop);
-    })();
   })();
 
   function readCache() {
