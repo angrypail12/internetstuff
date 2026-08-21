@@ -313,12 +313,21 @@
     border-right: 1px solid var(--border);
     background: var(--paper-white);
   }
-  .ticker-item img,
-  .ticker-item img.is-logo {
+  .ticker-item img {
     object-fit: cover;
     -webkit-user-drag: none;
     user-drag: none;
     pointer-events: none;
+  }
+  /* Favicon fallbacks (used when a source has no real article image, or
+     none loads) were sharing object-fit:cover with genuine photos — a small
+     ~32px icon stretched to fill a 200x184 box that way comes out badly
+     blurred, which is what showed up for The Hollywood Reporter. Logos get
+     their own treatment: shown at their natural size, centered, on a plain
+     background, instead of being blown up. */
+  .ticker-item img.is-logo {
+    object-fit: contain;
+    padding: 34px;
   }
   .ticker-item .site-emoji {
     font-size: 3.2rem;
