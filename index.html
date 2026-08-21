@@ -507,7 +507,7 @@
     { name: "Literary Hub", domain: "lithub.com", feed: "https://lithub.com/feed/", category: "arts" },
     { name: "Book Riot", domain: "bookriot.com", feed: "https://bookriot.com/feed/", category: "arts" },
     { name: "Chicago Review of Books", domain: "chireviewofbooks.com", feed: "https://chireviewofbooks.com/feed/", category: "arts" },
-    { name: "The Hollywood Reporter", domain: "hollywoodreporter.com", feed: "https://www.hollywoodreporter.com/feed/", category: "arts" },
+    { name: "The Hollywood Reporter", domain: "hollywoodreporter.com", feed: "https://www.hollywoodreporter.com/feed/", category: "arts", ogImageFallback: true },
     { name: "Chicago Sun-Times", domain: "suntimes.com", feed: "https://chicago.suntimes.com/rss/index.xml", category: "chicago" },
     { name: "The Daily Hoosier", domain: "thedailyhoosier.com", feed: "https://www.thedailyhoosier.com/feed/", category: "hoosiers" },
     { name: "Inside the Hall", domain: "insidethehall.com", wpApiBase: "https://www.insidethehall.com", category: "hoosiers" },
@@ -703,6 +703,20 @@
     return doc.documentElement.textContent || "";
   }
 
+  // A few sources (Hollywood Reporter) don't put any image in their RSS
+  // feed at all, but every individual article page has a real featured
+  // photo in its og:image meta tag. This fetches one article page and
+  // pulls that tag out — used as a per-item fallback, not a bulk source.
+  function fetchOgImage(url) {
+    return tryProxiesUntil(url, function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var meta = doc.querySelector('meta[property="og:image"]') ||
+        doc.querySelector('meta[name="og:image"]');
+      var content = meta && meta.getAttribute("content");
+      return content || null;
+    });
+  }
+
   // Some sources don't put real images in their RSS feed at all (Inside
   // the Hall's descriptions are plain text). Their WordPress REST API
   // does have the featured image though, just not attached to the post —
@@ -773,7 +787,18 @@
       .then(function (text) {
         var items = parseFeed(text, source);
         if (items.length === 0) throw new Error("no items");
-        return items;
+        if (!source.ogImageFallback) return items;
+        // Feed had no images at all — go fetch each article's own page
+        // and pull its real featured photo out of og:image. Runs in
+        // parallel; any item whose fetch fails just falls back to the
+        // favicon chain in buildItemEl like normal.
+        return Promise.all(items.map(function (it) {
+          if (it.image) return it;
+          return fetchOgImage(it.link).then(function (img) {
+            it.image = img;
+            return it;
+          });
+        }));
       })
       .catch(function () { return loadFeed(source, proxyIndex + 1); });
   }
