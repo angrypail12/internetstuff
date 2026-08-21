@@ -508,7 +508,12 @@
     { name: "Book Riot", domain: "bookriot.com", feed: "https://bookriot.com/feed/", category: "arts" },
     { name: "Chicago Review of Books", domain: "chireviewofbooks.com", feed: "https://chireviewofbooks.com/feed/", category: "arts" },
     { name: "The Hollywood Reporter", domain: "hollywoodreporter.com", feed: "https://www.hollywoodreporter.com/feed/", category: "arts", ogImageFallback: true },
-    { name: "Chicago Sun-Times", domain: "suntimes.com", feed: "https://chicago.suntimes.com/rss/index.xml", category: "chicago" },
+    { name: "Chicago Sun-Times", domain: "suntimes.com", category: "chicago", subFeeds: [
+      "https://chicago.suntimes.com/rss/index.xml",
+      "https://chicago.suntimes.com/rss/sports/index.xml",
+      "https://chicago.suntimes.com/rss/entertainment-and-culture/index.xml",
+      "https://chicago.suntimes.com/rss/opinion/index.xml"
+    ] },
     { name: "The Daily Hoosier", domain: "thedailyhoosier.com", feed: "https://www.thedailyhoosier.com/feed/", category: "hoosiers" },
     { name: "Inside the Hall", domain: "insidethehall.com", wpApiBase: "https://www.insidethehall.com", category: "hoosiers" },
     { name: "Block Club Chicago", domain: "blockclubchicago.org", feed: "https://blockclubchicago.org/feed/", category: "chicago" },
@@ -772,13 +777,12 @@
     }).catch(function () { return []; });
   }
 
-  // Try each proxy in sequence for a single feed; first one that yields
+  // Try each proxy in sequence for a single feed URL; first one that yields
   // real items wins. Falls through silently on failure/empty/timeout.
-  function loadFeed(source, proxyIndex) {
-    if (source.wpApiBase) return loadWpApiFeed(source);
+  function loadSingleFeed(feedUrl, source, proxyIndex) {
     proxyIndex = proxyIndex || 0;
     if (proxyIndex >= PROXIES.length) return Promise.resolve([]);
-    var url = PROXIES[proxyIndex](source.feed);
+    var url = PROXIES[proxyIndex](feedUrl);
     return fetchWithTimeout(url, FETCH_TIMEOUT_MS)
       .then(function (res) {
         if (!res.ok) throw new Error("bad status");
@@ -800,7 +804,39 @@
           });
         }));
       })
-      .catch(function () { return loadFeed(source, proxyIndex + 1); });
+      .catch(function () { return loadSingleFeed(feedUrl, source, proxyIndex + 1); });
+  }
+
+  // Some sources (Chicago Sun-Times) publish so much general/breaking news
+  // that a single combined feed, sorted by recency, drowns out their other
+  // sections entirely — Arts & Culture, Commentary, and Sports pieces never
+  // reach the top before aging out. Pulling each section's own feed and
+  // capping how much any one of them can contribute guarantees every
+  // section gets real representation instead of just whichever fires most
+  // often.
+  function loadSubFeeds(source) {
+    var perFeedCap = 5;
+    return Promise.all(source.subFeeds.map(function (feedUrl) {
+      return loadSingleFeed(feedUrl, source).then(function (items) {
+        return items.slice(0, perFeedCap);
+      });
+    })).then(function (results) {
+      var merged = [].concat.apply([], results);
+      var seen = {};
+      // Same story can show up in more than one section feed (e.g. the
+      // general feed and Sports) — keep the first copy only.
+      return merged.filter(function (it) {
+        if (seen[it.link]) return false;
+        seen[it.link] = true;
+        return true;
+      });
+    });
+  }
+
+  function loadFeed(source) {
+    if (source.wpApiBase) return loadWpApiFeed(source);
+    if (source.subFeeds) return loadSubFeeds(source);
+    return loadSingleFeed(source.feed, source);
   }
 
   function buildItemEl(it) {
