@@ -827,7 +827,7 @@
     var sources = it.image ? [it.image].concat(logoSources) : logoSources;
     var logoStartIndex = it.image ? 1 : 0;
     var sourceIndex = 0;
-    img.onerror = function () {
+    function advance() {
       sourceIndex++;
       if (sourceIndex < sources.length) {
         if (sourceIndex >= logoStartIndex) img.classList.add("is-logo");
@@ -835,6 +835,22 @@
       } else {
         img.style.display = "none";
         fallback.style.display = "flex";
+      }
+    }
+    img.onerror = advance;
+    // Some favicon services return a technically-valid image rather than a
+    // 404 even when the icon they've cached for a domain is genuinely tiny —
+    // that "succeeds" and never triggers onerror, but looks soft/blurry once
+    // object-fit:contain scales a ~16-32px icon up to fill more of the row
+    // (The Hollywood Reporter's DuckDuckGo icon was exactly this). If we're
+    // still working through the logo-fallback chain and what just loaded is
+    // suspiciously small, treat it the same as a failure and keep going —
+    // unless it's the very last source, in which case a small icon beats no
+    // icon at all.
+    img.onload = function () {
+      var tooSmall = this.naturalWidth > 0 && this.naturalWidth < 48;
+      if (sourceIndex >= logoStartIndex && tooSmall && sourceIndex < sources.length - 1) {
+        advance();
       }
     };
     if (sourceIndex >= logoStartIndex) img.classList.add("is-logo");
