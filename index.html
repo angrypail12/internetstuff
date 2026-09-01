@@ -528,11 +528,19 @@
   // Try multiple CORS proxies in order — free proxies are individually
   // unreliable (rate limits, downtime, origin restrictions), so we race
   // through a fallback chain per feed instead of betting on just one.
+  // corsproxy.io started requiring a paid API key (hard 401 on every
+  // request, confirmed directly), and allorigins/codetabs/thingproxy are
+  // commonly caught by ad blockers and browser privacy shields (Arc, Brave,
+  // Safari, uBlock Origin, etc.) since they're well-known CORS-bypass
+  // tools — which is very likely why the ticker went fully dark on every
+  // device. proxy.cors.sh is the new primary: confirmed working live
+  // against XML feeds, JSON APIs, and HTML pages alike. The old ones stay
+  // as free-if-they-work fallbacks for anyone whose browser doesn't block
+  // them, but nothing now depends on them.
   var PROXIES = [
-    function (u) { return "https://corsproxy.io/?url=" + encodeURIComponent(u); },
+    function (u) { return "https://proxy.cors.sh/" + u; },
     function (u) { return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); },
-    function (u) { return "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u); },
-    function (u) { return "https://thingproxy.freeboard.io/fetch/" + u; }
+    function (u) { return "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u); }
   ];
   var FETCH_TIMEOUT_MS = 9000;
   var CACHE_KEY = "tickerHeadlinesCache_v2";
