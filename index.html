@@ -793,11 +793,16 @@
         if (items.length === 0) throw new Error("no items");
         if (!source.ogImageFallback) return items;
         // Feed had no images at all — go fetch each article's own page
-        // and pull its real featured photo out of og:image. Runs in
-        // parallel; any item whose fetch fails just falls back to the
-        // favicon chain in buildItemEl like normal.
-        return Promise.all(items.map(function (it) {
-          if (it.image) return it;
+        // and pull its real featured photo out of og:image. This is a
+        // full extra page fetch per item, so it's limited to a small
+        // slice of the list (not all ITEMS_PER_FEED, which at 50 would
+        // fire 50 parallel article fetches through the free CORS proxies
+        // on every load — enough to look like abuse and get rate-limited
+        // or blocked outright). Items past the slice just fall back to
+        // the normal favicon chain in buildItemEl.
+        var OG_IMAGE_FALLBACK_LIMIT = 8;
+        return Promise.all(items.map(function (it, i) {
+          if (it.image || i >= OG_IMAGE_FALLBACK_LIMIT) return it;
           return fetchOgImage(it.link).then(function (img) {
             it.image = img;
             return it;
